@@ -16,7 +16,11 @@
             android:theme="@style/Theme.UceniSlovicek.NoActionBar">
         </activity>
         <activity
-            android:name=".drawer_items.LoginForm"
+            android:name=".SchoolsListActivity">
+        </activity>
+
+        <activity
+            android:name=".LoginForm"
             android:label="Login">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
