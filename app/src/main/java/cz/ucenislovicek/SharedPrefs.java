@@ -18,6 +18,9 @@ public class SharedPrefs {
     public static final String ACCEESS_TOKEN = "access_token";
     public static final String REFRESH_TOKEN = "refresh_token";
 
+
+    public static final String UZIVID = "-1";
+
     //settings
     public static final String DARK_MODE = "DarkMode";
     public static final String WEEKEND_ON = "WeekendOn";
@@ -81,6 +84,7 @@ public class SharedPrefs {
         preferenceManager.putInt(key, value);
         preferenceManager.apply();
     }
+
 
     public static float getFloat(Context context, String key){
         return PreferenceManager

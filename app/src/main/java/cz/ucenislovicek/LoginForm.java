@@ -1,6 +1,7 @@
 package cz.ucenislovicek;
 
 import android.content.Intent;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
@@ -10,12 +11,19 @@ import android.widget.ProgressBar;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.jcraft.jsch.JSch;
+import com.jcraft.jsch.JSchException;
 import com.jcraft.jsch.Session;
+
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 
 import cz.ucenislovicek.BakalariAPI.LoadBag;
 import cz.ucenislovicek.BakalariAPI.Login;
 import cz.ucenislovicek.BakalariAPI.SchoolsListActivity;
-import cz.ucenislovicek.BakalariAPI.rozvrh.items.Rozvrh;
 import cz.ucenislovicek.databinding.ActivityLoginBinding;
 
 public class LoginForm extends AppCompatActivity {
@@ -35,15 +43,18 @@ public class LoginForm extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         ActivityLoginBinding binding = ActivityLoginBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
-        /*try {
-            tunel = new JSch().getSession("dk-313", "db.gyarab.cz", 22);
-            tunel.setPassword("GyArab14");
-            tunel.setConfig("StrictHostKeyChecking", "no");
-            tunel.connect();
-            tunel.setPortForwardingL(3306, "localhost", 3306);
-        } catch (JSchException e) {
-            e.printStackTrace();
-        }*/
+        new Thread(() -> {
+            try {
+                tunel = new JSch().getSession("dk-313", "db.gyarab.cz", 22);
+                tunel.setPassword("GyArab14");
+                tunel.setConfig("StrictHostKeyChecking", "no");
+                tunel.connect();
+                tunel.setPortForwardingL(3306, "localhost", 3306);
+            } catch (JSchException e) {
+                e.printStackTrace();
+            }
+        }).start();
+
 
         final Button login = binding.button;
 
@@ -60,7 +71,6 @@ public class LoginForm extends AppCompatActivity {
             login.setVisibility(View.INVISIBLE);
             login.setClickable(false);
 
-            // save user input
             final String passwordText = password.getText().toString();
             final String usernameText = username.getText().toString();
             final String urlText = serverAddress.getText().toString();
@@ -76,9 +86,8 @@ public class LoginForm extends AppCompatActivity {
 
                     LoadBag loadBag = new LoadBag(this, this);
                     loadBag.getRozvrh(Integer.MAX_VALUE);
-                    Rozvrh rozvrh = loadBag.rozvrh;
 
-
+                    new checkFirstLogin(usernameText).execute();
                     startActivity(new Intent(LoginForm.this, MainActivity.class));
                     finish();
                     return;
@@ -115,10 +124,95 @@ public class LoginForm extends AppCompatActivity {
         login.setClickable(true);
     }
 
+    private class checkFirstLogin extends AsyncTask<Void, Void, Void> {
 
-    /*@Override
-    protected void onDestroy() {
-        super.onDestroy();
-        tunel.disconnect();
-    }*/
+        String username;
+        int result = 0;
+
+        public checkFirstLogin(String username) {
+            this.username = username;
+        }
+
+        @Override
+        protected Void doInBackground(Void... voids) {
+
+            try {
+                Connection con = DriverManager.getConnection("jdbc:mysql://localhost/dk-313_uceniSlovicek?serverTimezone=Europe/Prague", "dk-313", "GyArab14");
+                PreparedStatement st = con.prepareStatement("select count(*) from uzivatele where uzivjm=?");
+                st.setString(1, username);
+                ResultSet rs = st.executeQuery();
+                if (rs.next()) {
+                    result = rs.getInt(1);
+
+                }
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(Void unused) {
+            super.onPostExecute(unused);
+            if (result == 1) {
+                if (SharedPrefs.getInt(getApplicationContext(), SharedPrefs.UZIVID) == -1) {
+                    new getUzivId(username).execute();
+                }
+            } else {
+                new registrate(username).execute();
+            }
+        }
+    }
+
+    private class registrate extends AsyncTask<Void, Void, Void> {
+
+        private final String username;
+
+        public registrate(String username) {
+            this.username = username;
+        }
+
+        @Override
+        protected Void doInBackground(Void... voids) {
+
+            try {
+                Connection con = DriverManager.getConnection("jdbc:mysql://localhost/dk-313_uceniSlovicek?serverTimezone=Europe/Prague", "dk-313", "GyArab14");
+                PreparedStatement st = con.prepareStatement("insert into uzivatele (uzivjm, typ) values (?, ?)");
+                st.setString(1, username);
+                st.setString(2, SharedPrefs.getString(getApplicationContext(), SharedPrefs.TYPE));
+                st.executeUpdate();
+                con.close();
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+            return null;
+        }
+    }
+
+    private class getUzivId extends AsyncTask<Void, Void, Void> {
+
+        private final String username;
+
+        public getUzivId(String username) {
+            this.username = username;
+        }
+
+        @Override
+        protected Void doInBackground(Void... voids) {
+
+            try {
+                Connection con = DriverManager.getConnection("jdbc:mysql://localhost/dk-313_uceniSlovicek?serverTimezone=Europe/Prague", "dk-313", "GyArab14");
+                PreparedStatement st = con.prepareStatement("select uzivid from uzivatele where uzivjm=?");
+                st.setString(1, username);
+                ResultSet rs = st.executeQuery();
+                if (rs.next()) {
+                    SharedPrefs.setInt(getApplicationContext(), SharedPrefs.UZIVID, rs.getInt(1));
+                }
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+            return null;
+        }
+    }
+
 }

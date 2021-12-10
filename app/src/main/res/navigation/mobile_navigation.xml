@@ -12,10 +12,10 @@
         tools:layout="@layout/fragment_home" />
 
     <fragment
-        android:id="@+id/nav_gallery"
-        android:name="cz.ucenislovicek.drawer_items.gallery.GalleryFragment"
-        android:label="Gallery"
-        tools:layout="@layout/fragment_gallery" />
+        android:id="@+id/nav_pridaniSlovicek"
+        android:name="cz.ucenislovicek.drawer_items.pridaniSlovicek.FragmentPridaniSlovicek"
+        android:label="Přidání slovíček"
+        tools:layout="@layout/fragment_pridani_slovicek" />
 
     <fragment
         android:id="@+id/nav_slideshow"
