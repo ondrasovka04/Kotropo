@@ -1,9 +1,12 @@
-package cz.ucenislovicek;
+package cz.ucenislovicek.BakalariAPI;
 
 import android.content.Intent;
 import android.os.Bundle;
 
 import androidx.appcompat.app.AppCompatActivity;
+
+import cz.ucenislovicek.R;
+import cz.ucenislovicek.SharedPrefs;
 
 
 public class SchoolsListActivity extends AppCompatActivity {

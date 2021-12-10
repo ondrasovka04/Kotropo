@@ -1,6 +1,4 @@
-package cz.ucenislovicek.schoolsDatabase;
-
-import android.util.Log;
+package cz.ucenislovicek.BakalariAPI.schoolsDatabase;
 
 import com.android.volley.NetworkResponse;
 import com.android.volley.ParseError;
@@ -16,7 +14,6 @@ import org.xml.sax.SAXException;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.lang.reflect.Method;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -76,7 +73,6 @@ public class SchoolRequest extends Request<Void> {
             }
             return Response.success(null, HttpHeaderParser.parseCacheHeaders(response));
         } catch (ParserConfigurationException | IOException | SAXException e) {
-            Log.e(TAG, "Parsing city school list failed: url: " + url + "response:\n" + response + "\n\n----------\nstack trace");
             e.printStackTrace();
             return Response.error(new ParseError());
         }

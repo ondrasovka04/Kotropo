@@ -1,11 +1,10 @@
-package cz.ucenislovicek.schoolsDatabase;
+package cz.ucenislovicek.BakalariAPI.schoolsDatabase;
 
 import android.content.Context;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
-import android.util.Log;
 import android.widget.ProgressBar;
 
 import com.android.volley.RequestQueue;
@@ -60,7 +59,7 @@ public class SchoolsDatabaseAPI {
                 try {
                     url = SCHOOLS_DATABASE_URL + URLEncoder.encode(s, "utf-8");
                 } catch (UnsupportedEncodingException e) {
-                    Log.e(TAG, "utf-8 encoding not supported!");
+                    e.printStackTrace();
                 }
 
                 final String furl = url;
@@ -68,13 +67,10 @@ public class SchoolsDatabaseAPI {
                 SchoolRequest request = new SchoolRequest(furl, dao, response -> {
 
                     decrement(requestsCounter, listener, dao, start, progressBar);
-                    Log.d(TAG, s);
                 }, error -> {
                     if (error != null && (error.networkResponse == null || error.networkResponse.statusCode != 404)) {
-                        Log.e(TAG, "Error while getting schools list: url: " + furl + "\n\n----------\nstack trace");
                         error.printStackTrace();
                     }
-                    Log.d(TAG, s);
                     decrement(requestsCounter, listener, dao, start, progressBar);
 
                 });

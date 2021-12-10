@@ -1,4 +1,4 @@
-package cz.ucenislovicek.schoolsDatabase;
+package cz.ucenislovicek.BakalariAPI.schoolsDatabase;
 
 import androidx.room.Entity;
 import androidx.room.Fts4;

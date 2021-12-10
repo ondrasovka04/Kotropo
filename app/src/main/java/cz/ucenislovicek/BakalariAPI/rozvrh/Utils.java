@@ -74,7 +74,7 @@ public class Utils {
             try {
                 offset = Integer.parseInt(SharedPrefs.getString(context, context.getString(R.string.PREFS_SWITCH_TO_NEXT_WEEK)));
             } catch (NumberFormatException e) {
-                Log.e(TAG, "Failed to cast 'Switch to the next week' setting value. Value: " + SharedPrefs.getString(context, context.getString(R.string.PREFS_SWITCH_TO_NEXT_WEEK)));
+                e.printStackTrace();
             }
         }
 

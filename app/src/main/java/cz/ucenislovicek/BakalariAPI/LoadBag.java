@@ -1,27 +1,17 @@
-package cz.ucenislovicek;
+package cz.ucenislovicek.BakalariAPI;
 
 import android.content.Context;
-import android.content.Intent;
-import android.widget.Toast;
 
 import androidx.lifecycle.LifecycleOwner;
 import androidx.lifecycle.LiveData;
 
-
 import org.joda.time.LocalDate;
 
-import java.util.ArrayList;
-import java.util.List;
-
-
-import cz.ucenislovicek.Adapter.Subject;
 import cz.ucenislovicek.BakalariAPI.rozvrh.AppSingleton;
 import cz.ucenislovicek.BakalariAPI.rozvrh.RozvrhAPI;
 import cz.ucenislovicek.BakalariAPI.rozvrh.RozvrhWrapper;
 import cz.ucenislovicek.BakalariAPI.rozvrh.Utils;
 import cz.ucenislovicek.BakalariAPI.rozvrh.items.Rozvrh;
-import cz.ucenislovicek.BakalariAPI.rozvrh.items.RozvrhDen;
-import cz.ucenislovicek.BakalariAPI.rozvrh.items.RozvrhHodina;
 
 public class LoadBag {
     public static final int SUCCESS = 0;
@@ -43,10 +33,10 @@ public class LoadBag {
 
     private final Context context;
     private final LifecycleOwner lifecycleOwner;
-     Rozvrh rozvrh;
+    public Rozvrh rozvrh;
 
 
-    public LoadBag(Context context, LifecycleOwner lifecycleOwner){
+    public LoadBag(Context context, LifecycleOwner lifecycleOwner) {
         this.context = context;
         this.lifecycleOwner = lifecycleOwner;
 
@@ -57,52 +47,31 @@ public class LoadBag {
     }
 
 
-
-
     public void getRozvrh(int weekIndex) {
-        //debug timing: Log.d(TAG_TIMER, "displayWeek start " + Utils.getDebugTime());
 
         //what week is it from now (0: this, 1: next, -1: last, Integer.MAX_VALUE: permanent)
-        if (weekIndex == Integer.MAX_VALUE)
+        if (weekIndex == Integer.MAX_VALUE) {
             week = null;
-        else
+        } else {
             week = Utils.getDisplayWeekMonday(getContext()).plusWeeks(weekIndex);
-
-
-        //String infoMessage = Utils.getfl10nedWeekString(weekIndex, getContext());
-        if (offline) {
-            //MainActivity.showAlert(context,context.getResources().getString(R.string.OFFLINE), context.getResources().getString(R.string.OFFLINEsubtext));
         }
 
 
         rozvrhAPI = AppSingleton.getInstance(context).getRozvrhAPI();
 
-        if (liveData != null)
+        if (liveData != null) {
             liveData.removeObservers(lifecycleOwner);
-        liveData = rozvrhAPI.getLiveData(week);
-        RozvrhWrapper rw = liveData.getValue();
-        Rozvrh item = rw == null ? null : liveData.getValue().getRozvrh();
-        if (item == null) {
-            // rozvrhLayout.empty();
-        } else {
-            // rozvrhLayout.setRozvrh(item);
-            if (rw.getSource() == RozvrhWrapper.SOURCE_MEMORY){
-                if (offline) {
-                    //MainActivity.showAlert(context,context.getResources().getString(R.string.OFFLINE), context.getResources().getString(R.string.OFFLINEsubtext));
-                }
-            }
         }
+        liveData = rozvrhAPI.getLiveData(week);
 
         liveData.observe(lifecycleOwner, rozvrhWrapper -> {
-            if (rozvrhWrapper.getSource() == RozvrhWrapper.SOURCE_CACHE){
-               onCacheResponse(rozvrhWrapper.getCode(), rozvrhWrapper.getRozvrh());
+            if (rozvrhWrapper.getSource() == RozvrhWrapper.SOURCE_CACHE) {
+                onCacheResponse(rozvrhWrapper.getCode(), rozvrhWrapper.getRozvrh());
 
-            }else if (rozvrhWrapper.getSource() == RozvrhWrapper.SOURCE_NET){
+            } else if (rozvrhWrapper.getSource() == RozvrhWrapper.SOURCE_NET) {
                 onNetResponse(rozvrhWrapper.getCode(), rozvrhWrapper.getRozvrh());
             }
         });
-
-        //debug timing: Log.d(TAG_TIMER, "displayWeek end " + Utils.getDebugTime());
     }
 
     private void onNetResponse(int code, Rozvrh rozvrh) {
@@ -166,7 +135,6 @@ public class LoadBag {
             }
 
 
-
         }
 
     }
@@ -175,7 +143,7 @@ public class LoadBag {
         //check if fragment was not removed while loading
         if (code == SUCCESS) {
             this.rozvrh = rozvrh;
-        }else {
+        } else {
             //MainActivity.showAlert(context,context.getResources().getString(R.string.ERROR),context.getResources().getString(R.string.ERRORsubtext));
         }
         System.out.println("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n" + rozvrh.getDny().get(0).getHodiny().get(2).getZkrskup());
@@ -183,25 +151,22 @@ public class LoadBag {
 
     public void refresh(int weekIndex, Runnable runnable, Runnable runnable2) {
         // displayInfo.setLoadingState(DisplayInfo.LOADING);
-        if (weekIndex == Integer.MAX_VALUE)
-            week = null;
-        else
-            week = Utils.getDisplayWeekMonday(getContext()).plusWeeks(weekIndex);
+        if (weekIndex == Integer.MAX_VALUE) week = null;
+        else week = Utils.getDisplayWeekMonday(getContext()).plusWeeks(weekIndex);
 
         rozvrhAPI.refresh(week, rw -> {
             /*if (rw.getCode() != SUCCESS){
                 displayWeek(weekIndex, false);
             }else {*/
-            onNetResponse(rw.getCode(), rw.getRozvrh(),runnable2);
+            onNetResponse(rw.getCode(), rw.getRozvrh(), runnable2);
             runnable.run();
             /*}*/
         });
     }
 
-    public static Rozvrh getCurrentRozvrh(){
+    public static Rozvrh getCurrentRozvrh() {
         return currentRozvrh;
     }
-
 
 
 }

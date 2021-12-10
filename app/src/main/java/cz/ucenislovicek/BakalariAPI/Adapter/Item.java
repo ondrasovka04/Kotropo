@@ -1,4 +1,4 @@
-package cz.ucenislovicek.Adapter;
+package cz.ucenislovicek.BakalariAPI.Adapter;
 
 import android.content.Context;
 

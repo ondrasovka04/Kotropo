@@ -1,4 +1,4 @@
-package cz.ucenislovicek.schoolsDatabase;
+package cz.ucenislovicek.BakalariAPI.schoolsDatabase;
 
 import android.content.Context;
 
@@ -22,21 +22,19 @@ public class SchoolsViewModel extends ViewModel {
     private LiveData<PagedList<SchoolInfo>> queriedSchools;
     private MutableLiveData<String> query = new MutableLiveData<>();
 
-    public SchoolsDatabase init(Context context){
+    public SchoolsDatabase init(Context context) {
         context = context.getApplicationContext();
         if (database == null) {
             database = Room.inMemoryDatabaseBuilder(context, SchoolsDatabase.class).build();
-            // /\ that one is right, \/ this is debug
-            //database = Room.databaseBuilder(context, SchoolsDatabse.class,"schools-database.sqlite").build();
         }
         this.dao = database.schoolDAO();
         allSchools = new LivePagedListBuilder<>(dao.queryAllSchools(), 50).build();
 
         queriedSchools = Transformations.switchMap(query, v -> {
             System.out.println("search for: " + v);
-            if (v.isEmpty()){
+            if (v.isEmpty()) {
                 return new LivePagedListBuilder<>(dao.queryAllSchools(), 50).build();
-            }else {
+            } else {
                 return new LivePagedListBuilder<>(dao.searchByName(v), 50).build();
             }
         });
@@ -52,13 +50,12 @@ public class SchoolsViewModel extends ViewModel {
         return queriedSchools;
     }
 
-    public void setQuery(String queryString){
+    public void setQuery(String queryString) {
         //todo proper sanitization
         queryString = Normalizer.normalize(queryString, Normalizer.Form.NFD);
         queryString = queryString.replaceAll("[^\\p{ASCII}]", "");
         queryString = queryString.replace(" ", "* ");
-        if (!queryString.isEmpty())
-            queryString = queryString + "*";
+        if (!queryString.isEmpty()) queryString = queryString + "*";
         queryString = queryString.replaceAll("\"", "");
         queryString = queryString.replaceAll("\'", "");
         query.setValue(queryString);

@@ -1,4 +1,4 @@
-package cz.ucenislovicek;
+package cz.ucenislovicek.BakalariAPI;
 
 
 import android.os.Bundle;
@@ -20,10 +20,11 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.android.volley.RequestQueue;
 
-import cz.ucenislovicek.schoolsDatabase.SchoolsAdapter;
-import cz.ucenislovicek.schoolsDatabase.SchoolsDatabase;
-import cz.ucenislovicek.schoolsDatabase.SchoolsDatabaseAPI;
-import cz.ucenislovicek.schoolsDatabase.SchoolsViewModel;
+import cz.ucenislovicek.BakalariAPI.schoolsDatabase.SchoolsAdapter;
+import cz.ucenislovicek.BakalariAPI.schoolsDatabase.SchoolsDatabase;
+import cz.ucenislovicek.BakalariAPI.schoolsDatabase.SchoolsDatabaseAPI;
+import cz.ucenislovicek.BakalariAPI.schoolsDatabase.SchoolsViewModel;
+import cz.ucenislovicek.R;
 
 
 /**

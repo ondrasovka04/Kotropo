@@ -16,7 +16,7 @@
             android:theme="@style/Theme.UceniSlovicek.NoActionBar">
         </activity>
         <activity
-            android:name=".SchoolsListActivity">
+            android:name=".BakalariAPI.SchoolsListActivity">
         </activity>
 
         <activity

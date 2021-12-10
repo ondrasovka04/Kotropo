@@ -90,7 +90,6 @@ public class RozvrhDen {
                     //I've seen a weird schedule where there were more lessons than captions (lessons were outside of any caption)
                     //this is a fail-safe
                     //I simply make up some extra captions
-                    Log.w(TAG, "Schedule is having more lessons than there are captions");
                     Sentry.getContext().recordBreadcrumb(new BreadcrumbBuilder().setMessage("Schedule is having more lessons than there are captions").build());
 
                     RozvrhHodinaCaption caption = new RozvrhHodinaCaption();

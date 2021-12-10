@@ -69,7 +69,6 @@ public class Login {
             Retrofit retrofit = getRetrofit();
 
             if (retrofit == null){
-                Log.d("AAA","aa");
                 listener.onResponse(SERVER_UNREACHABLE);
                 return;
             }
@@ -96,6 +95,7 @@ public class Login {
                                 if(response.isSuccessful()){
                                     SharedPrefs.setString(context, SharedPrefs.NAME, Objects.requireNonNull(response.body()).fullName);
                                     SharedPrefs.setString(context, SharedPrefs.TYPE, response.body().UserType);
+                                    System.out.println(response.body().UserType);
                                     listener.onResponse(SUCCESS);
                                 }else {
                                     listener.onResponse(UNEXPECTER_RESPONSE);
@@ -104,7 +104,6 @@ public class Login {
 
                             @Override
                             public void onFailure(@NonNull Call<UserResponse> call, @NonNull Throwable t) {
-                                Log.e(TAG, t.toString());
                                 t.printStackTrace();
                                 listener.onResponse(SERVER_UNREACHABLE);
                             }
@@ -117,7 +116,6 @@ public class Login {
 
                 @Override
                 public void onFailure(@NonNull Call<LoginResponse> call, @NonNull Throwable t) {
-                    Log.e(TAG, t.toString());
                     t.printStackTrace();
                     listener.onResponse(SERVER_UNREACHABLE);
                 }
@@ -166,7 +164,6 @@ public class Login {
 
                     @Override
                     public void onFailure(@NonNull Call<LoginResponse> call, @NonNull Throwable t) {
-                        Log.e(TAG, t.toString());
                         t.printStackTrace();
                         notifyRefreshQueue(SERVER_UNREACHABLE);
                     }
@@ -258,7 +255,6 @@ public class Login {
     }
 
     public Retrofit getRetrofit() {
-       Log.d("AAA",Boolean.toString(SharedPrefs.contains(context,  SharedPrefs.URL)));
         if (SharedPrefs.contains(context,  SharedPrefs.URL)) {
 
             HttpLoggingInterceptor interceptor = new HttpLoggingInterceptor();

@@ -1,4 +1,4 @@
-package cz.ucenislovicek.schoolsDatabase;
+package cz.ucenislovicek.BakalariAPI.schoolsDatabase;
 
 
 import androidx.paging.DataSource;

@@ -4,12 +4,12 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".SchoolsListActivity"
+    tools:context=".BakalariAPI.SchoolsListActivity"
     android:background="@color/white">
 
     <androidx.fragment.app.FragmentContainerView
         android:id="@+id/fragmentSchools"
-        android:name="cz.ucenislovicek.SchoolsListFragment"
+        android:name="cz.ucenislovicek.BakalariAPI.SchoolsListFragment"
         android:layout_width="0dp"
         android:layout_height="0dp"
         app:layout_constraintBottom_toBottomOf="parent"

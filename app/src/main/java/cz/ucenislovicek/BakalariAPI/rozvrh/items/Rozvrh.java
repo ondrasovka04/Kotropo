@@ -443,7 +443,7 @@ public class Rozvrh {
 
             }
         } catch (Exception e) {
-            Log.e(TAG, "Creating rozvrh structure failed", e);
+            e.printStackTrace();
         }
         return sb.toString();
     }

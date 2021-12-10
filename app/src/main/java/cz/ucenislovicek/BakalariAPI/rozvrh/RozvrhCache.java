@@ -57,7 +57,6 @@ public class RozvrhCache {
                 outputStream.write(rozvrh.getBytes());
 
             } catch (Exception e) {
-                Log.e(TAG, "Timetable saving failed: error message: " + e.getMessage() + " stack trace:");
                 e.printStackTrace();
             }
         });
@@ -65,9 +64,7 @@ public class RozvrhCache {
 
 
     public static void loadRozvrh(LocalDate monday, RozvrhListener listener, Context context) {
-        //debug timing: Log.d(TAG_TIMER, "file load main start " + Utils.getDebugTime());
         new Thread(() -> {
-            //debug timing: Log.d(TAG_TIMER, "file load async start " + Utils.getDebugTime());
             LocalDate sureMonday = null;
             if (monday != null)
                 sureMonday = Utils.getWeekMonday(monday); //just to be extra sure
@@ -98,7 +95,6 @@ public class RozvrhCache {
                         listener.method(new RozvrhWrapper(null, NO_CACHE, RozvrhWrapper.SOURCE_CACHE)));
                 return;
             } catch (Exception e) {
-                Log.e(TAG, "Timetable loading failed: error message: " + e.getMessage() + " stack trace:");
                 e.printStackTrace();
 
                 new Handler(Looper.getMainLooper()).post(() ->
@@ -107,10 +103,8 @@ public class RozvrhCache {
             }
             new Handler(Looper.getMainLooper()).post(() ->
                     listener.method(new RozvrhWrapper(root.getRozvrh(), SUCCESS, RozvrhWrapper.SOURCE_CACHE)));
-            //debug timing: Log.d(TAG_TIMER, "file load async end " + Utils.getDebugTime());
         }).start();
 
-        //debug timing: Log.d(TAG_TIMER, "file load main end " + Utils.getDebugTime());
     }
 
     /**

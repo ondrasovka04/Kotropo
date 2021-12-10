@@ -10,11 +10,11 @@ import android.widget.ProgressBar;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
-import com.jcraft.jsch.JSch;
-import com.jcraft.jsch.JSchException;
 import com.jcraft.jsch.Session;
 
+import cz.ucenislovicek.BakalariAPI.LoadBag;
 import cz.ucenislovicek.BakalariAPI.Login;
+import cz.ucenislovicek.BakalariAPI.SchoolsListActivity;
 import cz.ucenislovicek.BakalariAPI.rozvrh.items.Rozvrh;
 import cz.ucenislovicek.databinding.ActivityLoginBinding;
 

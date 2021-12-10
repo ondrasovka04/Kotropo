@@ -1,4 +1,4 @@
-package cz.ucenislovicek.Adapter;
+package cz.ucenislovicek.BakalariAPI.Adapter;
 
 public class Subject {
     private final boolean[] week;

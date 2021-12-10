@@ -1,4 +1,4 @@
-package cz.ucenislovicek.schoolsDatabase;
+package cz.ucenislovicek.BakalariAPI.schoolsDatabase;
 
 import android.content.Context;
 import android.view.LayoutInflater;
@@ -12,7 +12,7 @@ import androidx.recyclerview.widget.DiffUtil;
 import androidx.recyclerview.widget.RecyclerView;
 
 import cz.ucenislovicek.R;
-import cz.ucenislovicek.SchoolsListFragment;
+import cz.ucenislovicek.BakalariAPI.SchoolsListFragment;
 
 
 public class SchoolsAdapter extends PagedListAdapter<SchoolInfo, SchoolsAdapter.ViewHolder> {

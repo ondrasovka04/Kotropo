@@ -15,6 +15,7 @@ import androidx.navigation.ui.NavigationUI;
 
 import com.google.android.material.navigation.NavigationView;
 
+import cz.ucenislovicek.R;
 import cz.ucenislovicek.databinding.ActivityMainBinding;
 
 public class MainActivity extends AppCompatActivity {
