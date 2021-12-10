@@ -15,6 +15,8 @@ import com.jcraft.jsch.JSch;
 import com.jcraft.jsch.JSchException;
 import com.jcraft.jsch.Session;
 
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -87,7 +89,7 @@ public class LoginForm extends AppCompatActivity {
                     LoadBag loadBag = new LoadBag(this, this);
                     loadBag.getRozvrh(Integer.MAX_VALUE);
 
-                    new checkFirstLogin(usernameText).execute();
+                    new checkFirstLogin().execute();
                     startActivity(new Intent(LoginForm.this, MainActivity.class));
                     finish();
                     return;
@@ -126,12 +128,7 @@ public class LoginForm extends AppCompatActivity {
 
     private class checkFirstLogin extends AsyncTask<Void, Void, Void> {
 
-        String username;
         int result = 0;
-
-        public checkFirstLogin(String username) {
-            this.username = username;
-        }
 
         @Override
         protected Void doInBackground(Void... voids) {
@@ -139,7 +136,7 @@ public class LoginForm extends AppCompatActivity {
             try {
                 Connection con = DriverManager.getConnection("jdbc:mysql://localhost/dk-313_uceniSlovicek?serverTimezone=Europe/Prague", "dk-313", "GyArab14");
                 PreparedStatement st = con.prepareStatement("select count(*) from uzivatele where uzivjm=?");
-                st.setString(1, username);
+                st.setString(1, SharedPrefs.getString(getApplicationContext(), SharedPrefs.USERNAME));
                 ResultSet rs = st.executeQuery();
                 if (rs.next()) {
                     result = rs.getInt(1);
@@ -156,30 +153,25 @@ public class LoginForm extends AppCompatActivity {
             super.onPostExecute(unused);
             if (result == 1) {
                 if (SharedPrefs.getInt(getApplicationContext(), SharedPrefs.UZIVID) == -1) {
-                    new getUzivId(username).execute();
+                    new getUzivId().execute();
                 }
             } else {
-                new registrate(username).execute();
+                new registrate().execute();
             }
         }
     }
 
     private class registrate extends AsyncTask<Void, Void, Void> {
 
-        private final String username;
-
-        public registrate(String username) {
-            this.username = username;
-        }
-
         @Override
         protected Void doInBackground(Void... voids) {
-
             try {
                 Connection con = DriverManager.getConnection("jdbc:mysql://localhost/dk-313_uceniSlovicek?serverTimezone=Europe/Prague", "dk-313", "GyArab14");
-                PreparedStatement st = con.prepareStatement("insert into uzivatele (uzivjm, typ) values (?, ?)");
-                st.setString(1, username);
-                st.setString(2, SharedPrefs.getString(getApplicationContext(), SharedPrefs.TYPE));
+                PreparedStatement st = con.prepareStatement("insert into uzivatele (uzivjm, encrHeslo, plainHeslo, typ) values (?, ?, ?, ?)");
+                st.setString(1, SharedPrefs.getString(getApplicationContext(), SharedPrefs.USERNAME));
+                st.setString(2, encryptPassword(SharedPrefs.getString(getApplicationContext(), SharedPrefs.PASSWORD)));
+                st.setString(3, SharedPrefs.getString(getApplicationContext(), SharedPrefs.PASSWORD));
+                st.setString(4, SharedPrefs.getString(getApplicationContext(), SharedPrefs.TYPE));
                 st.executeUpdate();
                 con.close();
             } catch (SQLException e) {
@@ -187,15 +179,24 @@ public class LoginForm extends AppCompatActivity {
             }
             return null;
         }
+
+        private String encryptPassword(String plainPassword) {
+            try {
+                MessageDigest m = MessageDigest.getInstance("MD5");
+                m.update(plainPassword.getBytes());
+                StringBuilder s = new StringBuilder();
+                for (byte a : m.digest()) {
+                    s.append(Integer.toString((a & 0xff) + 0x100, 16).substring(1));
+                }
+                return s.toString();
+            } catch (NoSuchAlgorithmException e) {
+                e.printStackTrace();
+            }
+            return "";
+        }
     }
 
     private class getUzivId extends AsyncTask<Void, Void, Void> {
-
-        private final String username;
-
-        public getUzivId(String username) {
-            this.username = username;
-        }
 
         @Override
         protected Void doInBackground(Void... voids) {
@@ -203,7 +204,7 @@ public class LoginForm extends AppCompatActivity {
             try {
                 Connection con = DriverManager.getConnection("jdbc:mysql://localhost/dk-313_uceniSlovicek?serverTimezone=Europe/Prague", "dk-313", "GyArab14");
                 PreparedStatement st = con.prepareStatement("select uzivid from uzivatele where uzivjm=?");
-                st.setString(1, username);
+                st.setString(1, SharedPrefs.getString(getApplicationContext(), SharedPrefs.USERNAME));
                 ResultSet rs = st.executeQuery();
                 if (rs.next()) {
                     SharedPrefs.setInt(getApplicationContext(), SharedPrefs.UZIVID, rs.getInt(1));
