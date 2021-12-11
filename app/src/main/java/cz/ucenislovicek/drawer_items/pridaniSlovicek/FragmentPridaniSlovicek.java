@@ -2,6 +2,7 @@ package cz.ucenislovicek.drawer_items.pridaniSlovicek;
 
 import android.annotation.SuppressLint;
 import android.app.AlertDialog;
+import android.content.DialogInterface;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -40,6 +41,7 @@ public class FragmentPridaniSlovicek extends Fragment {
     TextView tw1, tw2;
     ProgressBar pb;
 
+
     @SuppressLint("NewApi")
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         FragmentPridaniSlovicekBinding binding = FragmentPridaniSlovicekBinding.inflate(inflater, container, false);
@@ -75,16 +77,16 @@ public class FragmentPridaniSlovicek extends Fragment {
             et.setHint("Název nového bagde:");
             builder.setView(et);
 
-            builder.setCancelable(false).setPositiveButton("OK", (dialog, id) -> {
-                ArrayAdapter<String> adapter = (ArrayAdapter<String>) badge.getAdapter();
+            builder.setCancelable(false).setPositiveButton("OK", (dialogInterface, i) -> {
                 String newBadge = et.getText().toString();
+                ArrayAdapter<String> adapter = (ArrayAdapter<String>) badge.getAdapter();
                 adapter.add(newBadge);
                 adapter.sort(Comparator.naturalOrder());
                 badge.setAdapter(adapter);
                 badge.setSelection(adapter.getPosition(newBadge));
             });
-            builder.create().show();
 
+            builder.create().show();
         });
 
         pridat.setOnClickListener(view -> new getIdSlovicka().execute());
@@ -104,7 +106,7 @@ public class FragmentPridaniSlovicek extends Fragment {
 
             try {
                 Connection con = DriverManager.getConnection("jdbc:mysql://localhost/dk-313_uceniSlovicek?serverTimezone=Europe/Prague", "dk-313", "GyArab14");
-                Statement st = con.createStatement(); //nastavení příkazu
+                Statement st = con.createStatement();
                 ResultSet rs = st.executeQuery("select distinct jazyk from slovicka");
                 while (rs.next()) {
                     jazyky.add(rs.getString("jazyk"));
