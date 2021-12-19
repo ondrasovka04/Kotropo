@@ -2,7 +2,6 @@ package cz.ucenislovicek.drawer_items.pridaniSlovicek;
 
 import android.annotation.SuppressLint;
 import android.app.AlertDialog;
-import android.content.DialogInterface;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -89,7 +88,17 @@ public class FragmentPridaniSlovicek extends Fragment {
             builder.create().show();
         });
 
-        pridat.setOnClickListener(view -> new getIdSlovicka().execute());
+        pridat.setOnClickListener(view -> {
+            if(slovickoCizi.getText().toString().trim().equals("")){
+                slovickoCizi.setError("Špatně zadaná hodnota");
+                return;
+            }
+            if(slovickoCesky.getText().toString().trim().equals("")){
+                slovickoCesky.setError("Špatně zadaná hodnota");
+                return;
+            }
+            new getIdSlovicka().execute();
+        });
 
 
         new getJazyky().execute();

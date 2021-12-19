@@ -13,6 +13,7 @@
         <entry key="..\:/Ondra/Dokumenty/AndroidStudioProjects/UceniSlovicek/app/src/main/res/layout/activity_login_form.xml" value="0.36666666666666664" />
         <entry key="..\:/Ondra/Dokumenty/AndroidStudioProjects/UceniSlovicek/app/src/main/res/layout/activity_main.xml" value="0.36666666666666664" />
         <entry key="..\:/Ondra/Dokumenty/AndroidStudioProjects/UceniSlovicek/app/src/main/res/layout/activity_schools.xml" value="0.36666666666666664" />
+        <entry key="..\:/Ondra/Dokumenty/AndroidStudioProjects/UceniSlovicek/app/src/main/res/layout/activity_test.xml" value="0.36666666666666664" />
         <entry key="..\:/Ondra/Dokumenty/AndroidStudioProjects/UceniSlovicek/app/src/main/res/layout/actvity_bakalari_login.xml" value="0.36666666666666664" />
         <entry key="..\:/Ondra/Dokumenty/AndroidStudioProjects/UceniSlovicek/app/src/main/res/layout/app_bar_main.xml" value="0.36666666666666664" />
         <entry key="..\:/Ondra/Dokumenty/AndroidStudioProjects/UceniSlovicek/app/src/main/res/layout/content_main.xml" value="0.33" />
@@ -23,8 +24,11 @@
         <entry key="..\:/Ondra/Dokumenty/AndroidStudioProjects/UceniSlovicek/app/src/main/res/layout/fragment_schools_list.xml" value="0.36666666666666664" />
         <entry key="..\:/Ondra/Dokumenty/AndroidStudioProjects/UceniSlovicek/app/src/main/res/layout/fragment_second.xml" value="0.36666666666666664" />
         <entry key="..\:/Ondra/Dokumenty/AndroidStudioProjects/UceniSlovicek/app/src/main/res/layout/fragment_slideshow.xml" value="0.36666666666666664" />
+        <entry key="..\:/Ondra/Dokumenty/AndroidStudioProjects/UceniSlovicek/app/src/main/res/layout/fragment_test.xml" value="0.36666666666666664" />
         <entry key="..\:/Ondra/Dokumenty/AndroidStudioProjects/UceniSlovicek/app/src/main/res/layout/item_school_info.xml" value="0.36666666666666664" />
         <entry key="..\:/Ondra/Dokumenty/AndroidStudioProjects/UceniSlovicek/app/src/main/res/layout/nav_header_main.xml" value="0.36666666666666664" />
+        <entry key="..\:/Ondra/Dokumenty/AndroidStudioProjects/UceniSlovicek/app/src/main/res/layout/popup_test.xml" value="0.36666666666666664" />
+        <entry key="..\:/Ondra/Dokumenty/AndroidStudioProjects/UceniSlovicek/app/src/main/res/layout/spinner_checkbox_item.xml" value="1.25" />
         <entry key="..\:/Ondra/Dokumenty/AndroidStudioProjects/UceniSlovicek/app/src/main/res/layout/spinner_item.xml" value="0.36666666666666664" />
         <entry key="..\:/Ondra/Dokumenty/AndroidStudioProjects/UceniSlovicek/app/src/main/res/menu/activity_main_drawer.xml" value="0.36666666666666664" />
         <entry key="..\:/Ondra/Dokumenty/AndroidStudioProjects/UceniSlovicek/app/src/main/res/menu/main.xml" value="0.36666666666666664" />
