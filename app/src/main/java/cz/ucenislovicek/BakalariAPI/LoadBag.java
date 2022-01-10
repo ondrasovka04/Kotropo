@@ -146,7 +146,7 @@ public class LoadBag {
         } else {
             //MainActivity.showAlert(context,context.getResources().getString(R.string.ERROR),context.getResources().getString(R.string.ERRORsubtext));
         }
-        System.out.println("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n" + rozvrh.getDny().get(0).getHodiny().get(2).getZkrskup());
+        //System.out.println("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n" + rozvrh.getDny().get(0).getHodiny().get(2).getZkrskup());
     }
 
     public void refresh(int weekIndex, Runnable runnable, Runnable runnable2) {

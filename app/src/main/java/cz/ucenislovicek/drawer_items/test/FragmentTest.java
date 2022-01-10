@@ -61,6 +61,7 @@ public class FragmentTest extends Fragment {
                     finalBadges.add(a.getTitle());
                 }
             }
+            System.out.println(finalBadges);
             if (!finalBadges.isEmpty()) {
                 new getSlovicka(finalBadges).execute();
             } else {

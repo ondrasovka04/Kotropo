@@ -21,6 +21,7 @@ import androidx.constraintlayout.widget.ConstraintLayout;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import cz.ucenislovicek.MainActivity;
 import cz.ucenislovicek.R;
@@ -31,7 +32,6 @@ public class Test extends AppCompatActivity {
     TextView nadpis, cesky;
     EditText cizi;
     Button over;
-
 
     @RequiresApi(api = Build.VERSION_CODES.N)
     @Override
@@ -45,7 +45,6 @@ public class Test extends AppCompatActivity {
         cizi = binding.cizi;
         over = binding.button3;
 
-
         Intent i = getIntent();
         HashMap<String, String> slovicka = (HashMap<String, String>) i.getSerializableExtra("mapa");
         testuj(slovicka);
@@ -54,24 +53,27 @@ public class Test extends AppCompatActivity {
     private void testuj(HashMap<String, String> slovicka) {
         ArrayList<String> slovickaCizi = new ArrayList<>(slovicka.keySet());
         ArrayList<String> slovickaCZ = new ArrayList<>(slovicka.values());
+        AtomicInteger spravne = new AtomicInteger();
+        final int pocetSlovicek = slovickaCZ.size();
 
         cesky.setText(slovickaCZ.get(0));
 
         over.setOnClickListener(view -> {
-            System.out.println(slovickaCizi);
-            System.out.println(slovickaCZ);
             LayoutInflater layoutInflater = (LayoutInflater) getApplicationContext().getSystemService(Context.LAYOUT_INFLATER_SERVICE);
 
             View inflatedLayoutView = layoutInflater.inflate(R.layout.popup_test, null);
             inflatedLayoutView.setAnimation(AnimationUtils.loadAnimation(getApplicationContext(), R.anim.popupanim));
 
+            PopupWindow popup = new PopupWindow(inflatedLayoutView);
+
+            popup.setWidth(700);
+            popup.setHeight(700);
+            popup.setFocusable(true);
+            popup.showAtLocation(view, Gravity.CENTER, 0, 0);
+            popup.setOutsideTouchable(false);
+
             if (cizi.getText().toString().equals(slovickaCizi.get(0))) {
-                PopupWindow popup = new PopupWindow(inflatedLayoutView);
-
-                popup.setWidth(700);
-                popup.setHeight(700);
-                popup.setFocusable(true);
-
+                spravne.getAndIncrement();
                 Button dalsi = inflatedLayoutView.findViewById(R.id.dalsi);
                 dalsi.setOnClickListener(view12 -> {
                     slovickaCizi.remove(0);
@@ -80,24 +82,12 @@ public class Test extends AppCompatActivity {
                         cesky.setText(slovickaCZ.get(0));
                         cizi.setText("");
                     } else {
-                        //konec testu
-                        //TODO: 19.12.2021 obrazovka výsledků a odtamtud vrácení se zpět do main activity
-                        Toast.makeText(getApplicationContext(), "Konec testu!", Toast.LENGTH_SHORT).show();
-                        onBackPressed();
+                        popup.dismiss();
+                        showResults(view, pocetSlovicek, spravne.get());
                     }
                     popup.dismiss();
                 });
-
-                popup.showAtLocation(view, Gravity.CENTER, 0, 0);
-
-                popup.setOutsideTouchable(false);
             } else {
-                PopupWindow popup = new PopupWindow(inflatedLayoutView);
-
-                popup.setWidth(700);
-                popup.setHeight(700);
-                popup.setFocusable(true);
-
                 ConstraintLayout layout = inflatedLayoutView.findViewById(R.id.pokus);
                 layout.setBackgroundColor(Color.rgb(211, 11, 11));
 
@@ -124,20 +114,58 @@ public class Test extends AppCompatActivity {
                         cesky.setText(slovickaCZ.get(0));
                         cizi.setText("");
                     } else {
-                        //konec testu
-                        //TODO: 19.12.2021 obrazovka výsledků a odtamtud vrácení se zpět do main activity
-                        Toast.makeText(getApplicationContext(), "Konec testu!", Toast.LENGTH_SHORT).show();
-                        //onBackPressed();
-                        startActivity(new Intent(getApplicationContext(), MainActivity.class));
+                        popup.dismiss();
+                        showResults(view, pocetSlovicek, spravne.get());
                     }
-
                     popup.dismiss();
                 });
-
-                popup.showAtLocation(view, Gravity.CENTER, 0, 0);
-
-                popup.setOutsideTouchable(false);
             }
+        });
+    }
+
+    public void showResults(View view, int pocetSlovicek, int spravne) {
+        LayoutInflater layoutInflater = (LayoutInflater) getApplicationContext().getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+        View inflatedLayoutViewResults = layoutInflater.inflate(R.layout.popup_test_end, null);
+        inflatedLayoutViewResults.setAnimation(AnimationUtils.loadAnimation(getApplicationContext(), R.anim.popupanim));
+        PopupWindow results = new PopupWindow(inflatedLayoutViewResults);
+
+        results.setWidth(700);
+        results.setHeight(700);
+        results.setFocusable(true);
+        results.showAtLocation(view, Gravity.CENTER, 0, 0);
+        results.setOutsideTouchable(false);
+        TextView znamka = inflatedLayoutViewResults.findViewById(R.id.znamka);
+        TextView tv2 = inflatedLayoutViewResults.findViewById(R.id.textView8);
+        TextView tv1 = inflatedLayoutViewResults.findViewById(R.id.textView9);
+        ConstraintLayout cl = inflatedLayoutViewResults.findViewById(R.id.pozadi);
+        Button but = inflatedLayoutViewResults.findViewById(R.id.button4);
+        long i = Math.round(spravne / pocetSlovicek * 100);
+        if (i < 33) {
+            znamka.setText("5");
+            cl.setBackgroundColor(Color.rgb(130, 0, 0));
+            znamka.setTextColor(Color.WHITE);
+            tv1.setTextColor(Color.WHITE);
+            tv2.setTextColor(Color.WHITE);
+        } else if (i <= 51) {
+            znamka.setText("4");
+            cl.setBackgroundColor(Color.rgb(186, 63, 35));
+            znamka.setTextColor(Color.WHITE);
+            tv1.setTextColor(Color.WHITE);
+            tv2.setTextColor(Color.WHITE);
+        } else if (i <= 68) {
+            znamka.setText("3");
+            cl.setBackgroundColor(Color.rgb(255, 131, 71));
+        } else if (i <= 84) {
+            znamka.setText("2");
+            cl.setBackgroundColor(Color.rgb(203, 224, 111));
+        } else {
+            znamka.setText("1");
+            cl.setBackgroundColor(Color.rgb(152, 251, 152));
+        }
+
+        but.setOnClickListener(v -> {
+            results.dismiss();
+            onBackPressed();
         });
     }
 }
