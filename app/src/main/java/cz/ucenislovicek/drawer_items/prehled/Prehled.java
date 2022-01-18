@@ -34,29 +34,29 @@ public class Prehled extends AppCompatActivity {
             if (aktualBadge.equals(badge.get(i))) {
                 TableRow tableRow = new TableRow(this);
 
-                TableLayout.LayoutParams param = new TableLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT, 1.0f);
+                TableRow.LayoutParams param = new TableRow.LayoutParams(0, TableRow.LayoutParams.WRAP_CONTENT, 1f);
 
                 TextView tv_cizi = new TextView(this);
                 tv_cizi.setPadding(10, 10, 10, 10);
-                tv_cizi.setGravity(Gravity.START);
+                tv_cizi.setGravity(Gravity.CENTER_VERTICAL);
                 tv_cizi.setTextSize(20);
                 tv_cizi.setText(cizi.get(i));
-                //tv_cizi.setLayoutParams(new TableRow.LayoutParams(0));
                 tv_cizi.setLayoutParams(param);
 
                 TextView tv_cesky = new TextView(this);
                 tv_cesky.setPadding(10, 10, 10, 10);
-                tv_cesky.setGravity(Gravity.START);
+                tv_cesky.setGravity(Gravity.CENTER_VERTICAL);
                 tv_cesky.setTextSize(20);
                 tv_cesky.setText(cesky.get(i));
-                tv_cesky.setLayoutParams(new TableRow.LayoutParams(2));
-                //tv_cesky.setLayoutParams(new TableLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
+                tv_cesky.setLayoutParams(param);
+
                 tableRow.addView(tv_cizi);
                 tableRow.addView(tv_cesky);
 
                 tl.addView(tableRow);
+
                 View v = new View(this);
-                v.setLayoutParams(new TableRow.LayoutParams(TableRow.LayoutParams.MATCH_PARENT, 1));
+                v.setLayoutParams(new TableRow.LayoutParams(TableRow.LayoutParams.MATCH_PARENT, 3));
                 v.setBackgroundColor(Color.rgb(51, 51, 51));
                 tl.addView(v);
             } else {
