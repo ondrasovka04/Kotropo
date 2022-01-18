@@ -18,6 +18,12 @@
         tools:layout="@layout/fragment_pridani_slovicek" />
 
     <fragment
+        android:id="@+id/nav_prehled"
+        android:name="cz.ucenislovicek.drawer_items.prehled.FragmentPrehled"
+        android:label="Přehled slovíček"
+        tools:layout="@layout/fragment_prehled" />
+
+    <fragment
         android:id="@+id/nav_slideshow"
         android:name="cz.ucenislovicek.drawer_items.test.FragmentTest"
         android:label="Test"

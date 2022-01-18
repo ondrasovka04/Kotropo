@@ -55,6 +55,7 @@ public class Test extends AppCompatActivity {
         ArrayList<String> slovickaCZ = new ArrayList<>(slovicka.values());
         AtomicInteger spravne = new AtomicInteger();
         final int pocetSlovicek = slovickaCZ.size();
+        System.out.println(slovickaCZ);
 
         cesky.setText(slovickaCZ.get(0));
 
@@ -123,7 +124,7 @@ public class Test extends AppCompatActivity {
         });
     }
 
-    public void showResults(View view, int pocetSlovicek, int spravne) {
+    public void showResults(View view, double pocetSlovicek, double spravne) {
         LayoutInflater layoutInflater = (LayoutInflater) getApplicationContext().getSystemService(Context.LAYOUT_INFLATER_SERVICE);
         View inflatedLayoutViewResults = layoutInflater.inflate(R.layout.popup_test_end, null);
         inflatedLayoutViewResults.setAnimation(AnimationUtils.loadAnimation(getApplicationContext(), R.anim.popupanim));

@@ -13,6 +13,10 @@
             android:icon="@drawable/ic_pridat_slovicka"
             android:title="Přidání slovíček" />
         <item
+            android:id="@+id/nav_prehled"
+            android:icon="@drawable/ic_prehled_slovicek"
+            android:title="Přehled slovíček" />
+        <item
             android:id="@+id/nav_slideshow"
             android:icon="@drawable/ic_test"
             android:title="Test" />

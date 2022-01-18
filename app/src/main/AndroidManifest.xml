@@ -12,12 +12,15 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.UceniSlovicek">
         <activity
+            android:name=".drawer_items.prehled.Prehled"
+            android:exported="false" />
+        <activity
             android:name=".drawer_items.test.Test"
             android:exported="false" />
         <activity
             android:name=".MainActivity"
-            android:theme="@style/Theme.UceniSlovicek.NoActionBar"></activity>
-        <activity android:name=".BakalariAPI.SchoolsListActivity"></activity>
+            android:theme="@style/Theme.UceniSlovicek.NoActionBar" />
+        <activity android:name=".BakalariAPI.SchoolsListActivity" />
         <activity
             android:name=".LoginForm"
             android:label="Login">
