@@ -9,6 +9,7 @@ import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.animation.AnimationUtils;
+import android.view.inputmethod.EditorInfo;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.PopupWindow;
@@ -44,6 +45,14 @@ public class Test extends AppCompatActivity {
         cesky = binding.cesky;
         cizi = binding.cizi;
         over = binding.button3;
+
+        cizi.setOnEditorActionListener((v, actionId, event) -> {
+            if(actionId == EditorInfo.IME_ACTION_DONE){
+                over.performClick();
+                return true;
+            }
+            return false;
+        });
 
         Intent i = getIntent();
         HashMap<String, String> slovicka = (HashMap<String, String>) i.getSerializableExtra("mapa");

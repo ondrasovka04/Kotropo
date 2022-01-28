@@ -1,14 +1,12 @@
-package cz.ucenislovicek;
+package cz.ucenislovicek.login;
 
 import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ProgressBar;
-import android.widget.Toast;
 
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
@@ -25,9 +23,8 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
-import cz.ucenislovicek.BakalariAPI.LoadBag;
-import cz.ucenislovicek.BakalariAPI.Login;
-import cz.ucenislovicek.BakalariAPI.SchoolsListActivity;
+import cz.ucenislovicek.R;
+import cz.ucenislovicek.SharedPrefs;
 import cz.ucenislovicek.databinding.ActivityLoginBinding;
 
 public class LoginForm extends AppCompatActivity {
@@ -55,7 +52,7 @@ public class LoginForm extends AppCompatActivity {
                 tunel.connect();
                 tunel.setPortForwardingL(3306, "localhost", 3306);
             } catch (JSchException e) {
-                e.printStackTrace();
+                //e.printStackTrace();
             }
         }).start();
 
@@ -63,7 +60,7 @@ public class LoginForm extends AppCompatActivity {
         final Button login = binding.button;
 
         final Button findSchool = binding.findSchool;
-        findSchool.setOnClickListener(view -> startActivity(new Intent(LoginForm.this, SchoolsListActivity.class)));
+        findSchool.setOnClickListener(view -> startActivity(new Intent(LoginForm.this, activity_listSkol.class)));
 
         final ProgressBar progressBar = binding.progressBar2;
         final EditText password = binding.heslo;
@@ -71,8 +68,6 @@ public class LoginForm extends AppCompatActivity {
         final EditText serverAddress = binding.address;
 
         login.setOnClickListener(v -> {
-            progressBar.setVisibility(View.VISIBLE);
-            login.setVisibility(View.INVISIBLE);
             login.setClickable(false);
 
             final String passwordText = password.getText().toString();
@@ -81,42 +76,9 @@ public class LoginForm extends AppCompatActivity {
             final String urlTextValidated = urlText.endsWith("/") ? urlText : urlText + "/";
             SharedPrefs.setString(this, SharedPrefs.USERNAME, usernameText);
             SharedPrefs.setString(this, SharedPrefs.PASSWORD, passwordText);
-            SharedPrefs.setString(this, SharedPrefs.URL, urlText);
+            SharedPrefs.setString(this, SharedPrefs.URL, urlTextValidated);
 
-            Login loginLogic = new Login(this);
-
-            loginLogic.getLogin().login(urlTextValidated, usernameText, passwordText, (code) -> {
-                if (code == Login.SUCCESS) {
-
-                    LoadBag loadBag = new LoadBag(this, this);
-                    loadBag.getRozvrh(Integer.MAX_VALUE);
-
-                    new checkFirstLogin().execute();
-                    startActivity(new Intent(LoginForm.this, MainActivity.class));
-                    finish();
-                    return;
-                }
-                login.setEnabled(true);
-                progressBar.setVisibility(View.GONE);
-                if (code == Login.WRONG_LOGIN) {
-                    resetButton(progressBar, login);
-                    username.setError("Špatně zadané uživatelské jméno nebo heslo.");
-                    password.setError("Špatně zadané uživatelské jméno nebo heslo.");
-                }
-                if (code == Login.SERVER_UNREACHABLE) {
-                    resetButton(progressBar, login);
-                    serverAddress.setError("Nelze se spojit se serverem. Zkontrolujte školní adresu.");
-                }
-                if (code == Login.UNEXPECTER_RESPONSE) {
-                    resetButton(progressBar, login);
-                    serverAddress.setError("Něco se pokazilo.");
-                }
-                if (code == Login.ROZVRH_DISABLED) {
-                    resetButton(progressBar, login);
-                    serverAddress.setError("Služby, které tato aplikace potřebuje nejsou k dispozici.");
-
-                }
-            });
+            new BakaAPI.getToken(this).execute();
         });
 
 
@@ -128,7 +90,7 @@ public class LoginForm extends AppCompatActivity {
         login.setClickable(true);
     }
 
-    private class checkFirstLogin extends AsyncTask<Void, Void, Void> {
+    /*private class checkFirstLogin extends AsyncTask<Void, Void, Void> {
 
         int result = 0;
 
@@ -216,6 +178,6 @@ public class LoginForm extends AppCompatActivity {
             }
             return null;
         }
-    }
+    }*/
 
 }

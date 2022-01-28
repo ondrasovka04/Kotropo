@@ -1,6 +1,6 @@
 package cz.ucenislovicek.drawer_items.test;
 
-import android.content.Context;
+import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Build;
@@ -12,6 +12,7 @@ import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.CheckBox;
+import android.widget.ExpandableListView;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -29,20 +30,25 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
 import cz.ucenislovicek.R;
 import cz.ucenislovicek.databinding.FragmentTestBinding;
+import cz.ucenislovicek.drawer_items.prehled.MyExpandableListAdapter;
 
 
 public class FragmentTest extends Fragment {
 
     TextView tv_jazyk, tv_bagde;
-    Spinner jazyk, badge;
+    Spinner jazyk;
     Button testovat;
-    List<StateVO> listVOs = new ArrayList<>();
     HashMap<String, String> slovicka = new HashMap<>();
+    List<String> childList = new ArrayList<>(), groupList = new ArrayList<>();
+    Map<String, List<String>> mobileCollection = new LinkedHashMap<>();
+    ExpandableListView expandableListView;
+    MyExpandableListAdapter expandableListAdapter;
 
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         FragmentTestBinding binding = FragmentTestBinding.inflate(inflater, container, false);
@@ -51,28 +57,13 @@ public class FragmentTest extends Fragment {
         tv_jazyk = binding.textView2;
         tv_bagde = binding.textView;
         jazyk = binding.jazyk;
-        badge = binding.badge;
+        expandableListView = binding.elv;
         testovat = binding.button2;
-
-        testovat.setOnClickListener(view -> {
-            ArrayList<String> finalBadges = new ArrayList<>();
-            for (StateVO a : listVOs) {
-                if (a.isSelected()) {
-                    finalBadges.add(a.getTitle());
-                }
-            }
-            System.out.println(finalBadges);
-            if (!finalBadges.isEmpty()) {
-                new getSlovicka(finalBadges).execute();
-            } else {
-                Toast.makeText(getContext(), "Musíte vybrat alespoň jeden badge", Toast.LENGTH_SHORT).show();
-            }
-        });
 
         jazyk.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l) {
-                new loadBadges().execute();
+                new loadBatches().execute();
             }
 
             @Override
@@ -81,7 +72,6 @@ public class FragmentTest extends Fragment {
             }
         });
 
-
         new getJazyky().execute();
         return root;
     }
@@ -89,10 +79,11 @@ public class FragmentTest extends Fragment {
 
     private class getSlovicka extends AsyncTask<Void, Void, Void> {
 
-        List<String> badges;
+        List<String> batches, stovky;
 
-        public getSlovicka(List<String> badges) {
-            this.badges = badges;
+        public getSlovicka(List<String> batches, List<String> stovky) {
+            this.batches = batches;
+            this.stovky = stovky;
         }
 
         @Override
@@ -100,15 +91,17 @@ public class FragmentTest extends Fragment {
 
             try {
                 Connection con = DriverManager.getConnection("jdbc:mysql://localhost/dk-313_uceniSlovicek?serverTimezone=Europe/Prague", "dk-313", "GyArab14");
-                String s = "select ceskeSlovicko, ciziSlovicko from slovicka where jazyk=? and ";
-                for (int i = 0; i < badges.size(); i++) {
-                    if (i == badges.size() - 1) {
-                        s += "badge=\"" + badges.get(i) + "\"";
-                    } else {
-                        s += "badge=\"" + badges.get(i) + "\" or ";
-                    }
+                StringBuilder s = new StringBuilder("select ceskeSlovicko, ciziSlovicko, batch from slovicka where jazyk=? and ");
+                for (int i = 0; i < batches.size(); i++) {
+                    s.append("batch=\"").append(batches.get(i)).append("\" or ");
                 }
-                PreparedStatement st = con.prepareStatement(s);
+                for (int i = 0; i < stovky.size(); i++) {
+                    s.append("stovka=\"").append(stovky.get(i).charAt(0)).append("\" or ");
+                }
+                String sql = s.substring(0, s.length() - 4);
+                sql += " order by stovka, batch";
+
+                PreparedStatement st = con.prepareStatement(sql);
                 st.setString(1, (String) jazyk.getSelectedItem());
                 ResultSet rs = st.executeQuery();
                 while (rs.next()) {
@@ -163,25 +156,40 @@ public class FragmentTest extends Fragment {
             ArrayAdapter<String> adapter = new ArrayAdapter<>(getContext(), R.layout.spinner_item, jazyky);
             adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
             jazyk.setAdapter(adapter);
-            new loadBadges().execute();
+            new loadBatches().execute();
         }
     }
 
-    private class loadBadges extends AsyncTask<Void, Void, Void> {
-
-        List<String> badges = new ArrayList<>();
+    @SuppressLint("StaticFieldLeak")
+    private class loadBatches extends AsyncTask<Void, Void, Void> {
 
         @Override
         protected Void doInBackground(Void... voids) {
 
             try {
                 Connection con = DriverManager.getConnection("jdbc:mysql://localhost/dk-313_uceniSlovicek?serverTimezone=Europe/Prague", "dk-313", "GyArab14");
-                PreparedStatement st = con.prepareStatement("select distinct badge from slovicka where jazyk=? order by badge");
+                PreparedStatement st = con.prepareStatement("select distinct stovka, batch from slovicka where jazyk=? order by stovka");
                 st.setString(1, (String) jazyk.getSelectedItem());
                 ResultSet rs = st.executeQuery();
+
+                childList = new ArrayList<>();
+                mobileCollection = new LinkedHashMap<>();
+                groupList = new ArrayList<>();
+                int lastStovka = 1;
+                groupList.add(lastStovka + ".stovka");
                 while (rs.next()) {
-                    badges.add(rs.getString("badge"));
+                    int aktualStovka = rs.getInt("stovka");
+                    if (lastStovka == aktualStovka) {
+                        childList.add(rs.getString("batch"));
+                    } else {
+                        mobileCollection.put(lastStovka + ".stovka", childList);
+                        lastStovka = aktualStovka;
+                        groupList.add(aktualStovka + ".stovka");
+                        childList = new ArrayList<>();
+                        childList.add(rs.getString("batch"));
+                    }
                 }
+                mobileCollection.put(lastStovka + ".stovka", childList);
             } catch (SQLException e) {
                 e.printStackTrace();
             }
@@ -191,99 +199,47 @@ public class FragmentTest extends Fragment {
         @Override
         protected void onPostExecute(Void unused) {
             super.onPostExecute(unused);
-            listVOs.clear();
-            StateVO first = new StateVO();
-            first.setTitle("Vyberte badge");
-            first.setSelected(false);
-            listVOs.add(first);
+            expandableListAdapter = new MyExpandableListAdapter(getContext(), groupList, mobileCollection);
+            expandableListView.setAdapter(expandableListAdapter);
+            expandableListView.setOnGroupExpandListener(new ExpandableListView.OnGroupExpandListener() {
+                int lastExpandedPosition = -1;
 
-            for (String s : badges) {
-                StateVO stateVO = new StateVO();
-                stateVO.setTitle(s);
-                stateVO.setSelected(false);
-                listVOs.add(stateVO);
-            }
-            MyAdapter myAdapter = new MyAdapter(getContext(), 0);
-            badge.setAdapter(myAdapter);
-        }
-    }
-
-    public class StateVO {
-        private String title;
-        private boolean selected;
-
-        public String getTitle() {
-            return title;
-        }
-
-        public void setTitle(String title) {
-            this.title = title;
-        }
-
-        public boolean isSelected() {
-            return selected;
-        }
-
-        public void setSelected(boolean selected) {
-            this.selected = selected;
-        }
-    }
-
-    public class MyAdapter extends ArrayAdapter<StateVO> {
-        private Context mContext;
-        private MyAdapter myAdapter;
-        private boolean isFromView = false;
-
-        public MyAdapter(Context context, int resource) {
-            super(context, resource, listVOs);
-            this.mContext = context;
-            this.myAdapter = this;
-        }
-
-        @Override
-        public View getDropDownView(int position, View convertView, ViewGroup parent) {
-            return getCustomView(position, convertView, parent);
-        }
-
-        @Override
-        public View getView(int position, View convertView, ViewGroup parent) {
-            return getCustomView(position, convertView, parent);
-        }
-
-        public View getCustomView(final int position, View convertView, ViewGroup parent) {
-
-            final ViewHolder holder;
-            if (convertView == null) {
-                LayoutInflater layoutInflator = LayoutInflater.from(mContext);
-                convertView = layoutInflator.inflate(R.layout.spinner_checkbox_item, null);
-                holder = new ViewHolder();
-                holder.mTextView = (TextView) convertView.findViewById(R.id.text);
-                holder.mCheckBox = (CheckBox) convertView.findViewById(R.id.checkbox);
-                convertView.setTag(holder);
-            } else {
-                holder = (ViewHolder) convertView.getTag();
-            }
-
-            holder.mTextView.setText(listVOs.get(position).getTitle());
-            holder.mCheckBox.setChecked(false);
-
-            if ((position == 0)) {
-                holder.mCheckBox.setVisibility(View.INVISIBLE);
-            } else {
-                holder.mCheckBox.setVisibility(View.VISIBLE);
-            }
-            holder.mCheckBox.setTag(position);
-
-            holder.mCheckBox.setOnCheckedChangeListener((buttonView, isChecked) -> {
-                listVOs.get(position).setSelected(isChecked);
+                @Override
+                public void onGroupExpand(int i) {
+                    if (lastExpandedPosition != -1 && i != lastExpandedPosition) {
+                        expandableListView.collapseGroup(lastExpandedPosition);
+                    }
+                    lastExpandedPosition = i;
+                }
             });
-
-            return convertView;
-        }
-
-        private class ViewHolder {
-            private TextView mTextView;
-            private CheckBox mCheckBox;
+            testovat.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    List<String> batch = new ArrayList<>();
+                    List<String> stovky = new ArrayList<>();
+                    MyExpandableListAdapter.Group[] groupes = expandableListAdapter.getGroupes();
+                    for (MyExpandableListAdapter.Group g : groupes) {
+                        for (CheckBox cb : g.getChilds()) {
+                            if (cb != null) {
+                                if (cb.isChecked()) {
+                                    batch.add((String) cb.getTag());
+                                }
+                            } else {
+                                if (g.getGroupBox().isChecked()) {
+                                    String s = (String) g.getGroupBox().getTag();
+                                    stovky.add(s.split("@")[0]);
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    if (stovky.isEmpty() && batch.isEmpty()) {
+                        Toast.makeText(getContext(), "Musíte vybrat alespoň jednu stovku nebo batch.", Toast.LENGTH_LONG).show();
+                    } else {
+                        new getSlovicka(batch, stovky).execute();
+                    }
+                }
+            });
         }
     }
 }

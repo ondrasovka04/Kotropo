@@ -12,6 +12,7 @@
         android:layout_height="31dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.292"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintVertical_bias="0.11" />
@@ -22,13 +23,13 @@
         android:layout_height="wrap_content"
         android:ems="10"
         android:hint="Cizí slovíčko"
-        android:inputType="textPersonName"
+        android:inputType="text"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.497"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/volbaJazyku"
-        app:layout_constraintVertical_bias="0.352" />
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.473" />
 
     <EditText
         android:id="@+id/slovickoCesky"
@@ -36,13 +37,13 @@
         android:layout_height="wrap_content"
         android:ems="10"
         android:hint="České slovíčko"
-        android:inputType="textPersonName"
+        android:inputType="text"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.497"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/volbaJazyku"
-        app:layout_constraintVertical_bias="0.487" />
+        app:layout_constraintVertical_bias="0.501" />
 
     <Button
         android:id="@+id/pridatslovicko"
@@ -57,51 +58,66 @@
         app:layout_constraintVertical_bias="0.334" />
 
     <Spinner
-        android:id="@+id/volbaBadge"
+        android:id="@+id/volbaBatche"
         android:layout_width="286dp"
         android:layout_height="36dp"
         app:layout_constraintBottom_toTopOf="@+id/slovickoCizi"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.328"
+        app:layout_constraintHorizontal_bias="0.192"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/volbaJazyku"
-        app:layout_constraintVertical_bias="0.517" />
+        app:layout_constraintVertical_bias="0.773" />
+
+    <Spinner
+        android:id="@+id/volbaStovky"
+        android:layout_width="286dp"
+        android:layout_height="36dp"
+        app:layout_constraintBottom_toTopOf="@+id/slovickoCizi"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.192"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/volbaJazyku"
+        app:layout_constraintVertical_bias="0.281" />
 
     <TextView
         android:id="@+id/textView3"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_marginBottom="20dp"
         android:text="Výběr jazyku:"
         app:layout_constraintBottom_toTopOf="@+id/volbaJazyku"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.118"
+        app:layout_constraintHorizontal_bias="0.073"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.551" />
+        app:layout_constraintVertical_bias="1.0" />
 
     <TextView
         android:id="@+id/textView4"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_marginBottom="10dp"
         android:text="Výběr badge:"
-        app:layout_constraintBottom_toTopOf="@+id/volbaBadge"
+        app:layout_constraintBottom_toTopOf="@+id/volbaBatche"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.118"
+        app:layout_constraintHorizontal_bias="0.076"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/volbaJazyku"
-        app:layout_constraintVertical_bias="0.568" />
+        app:layout_constraintVertical_bias="1.0" />
 
-    <Button
-        android:id="@+id/novyBadge"
-        android:layout_width="134dp"
-        android:layout_height="47dp"
-        android:text="Nový badge"
-        app:layout_constraintBottom_toTopOf="@+id/slovickoCizi"
+    <TextView
+        android:id="@+id/textView12"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="24dp"
+        android:layout_marginBottom="10dp"
+        android:text="Výběr stovky:"
+        app:layout_constraintBottom_toTopOf="@+id/volbaStovky"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.498"
+        app:layout_constraintHorizontal_bias="0.073"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/volbaBadge"
-        app:layout_constraintVertical_bias="0.514" />
+        app:layout_constraintTop_toBottomOf="@+id/volbaJazyku"
+        app:layout_constraintVertical_bias="1.0" />
 
     <ProgressBar
         android:id="@+id/progressBar2"
@@ -115,4 +131,30 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintVertical_bias="0.429" />
+
+    <ImageButton
+        android:id="@+id/novyBatch"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="5dp"
+        android:src="@drawable/ic_pridat"
+        app:layout_constraintBottom_toTopOf="@+id/slovickoCizi"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintStart_toEndOf="@+id/volbaBatche"
+        app:layout_constraintTop_toBottomOf="@+id/textView4"
+        app:layout_constraintVertical_bias="0.162" />
+
+    <ImageButton
+        android:id="@+id/novaStovka"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="5dp"
+        android:src="@drawable/ic_pridat"
+        app:layout_constraintBottom_toTopOf="@+id/textView4"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintStart_toEndOf="@+id/volbaStovky"
+        app:layout_constraintTop_toBottomOf="@+id/textView12"
+        app:layout_constraintVertical_bias="0.333" />
 </androidx.constraintlayout.widget.ConstraintLayout>
