@@ -1,9 +1,11 @@
 package cz.ucenislovicek;
 
 import android.annotation.SuppressLint;
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
@@ -16,6 +18,7 @@ import androidx.navigation.ui.NavigationUI;
 import com.google.android.material.navigation.NavigationView;
 
 import cz.ucenislovicek.databinding.ActivityMainBinding;
+import cz.ucenislovicek.login.Login;
 
 
 public class MainActivity extends AppCompatActivity {
@@ -49,7 +52,11 @@ public class MainActivity extends AppCompatActivity {
     public boolean onOptionsItemSelected(@NonNull MenuItem item) {
         switch (item.getItemId()) {
             case R.id.action_settings:
-
+                Toast.makeText(this, "Nastavení není ještě připraveno", Toast.LENGTH_SHORT).show();
+                return true;
+            case R.id.action_logout:
+                startActivity(new Intent(this, Login.class));
+                finish();
                 return true;
         }
         return super.onOptionsItemSelected(item);

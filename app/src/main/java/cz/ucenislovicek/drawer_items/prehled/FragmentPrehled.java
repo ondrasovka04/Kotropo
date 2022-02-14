@@ -13,6 +13,7 @@ import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.ExpandableListView;
+import android.widget.ProgressBar;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -21,51 +22,61 @@ import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import androidx.fragment.app.Fragment;
 
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
 import cz.ucenislovicek.R;
+import cz.ucenislovicek.SharedPrefs;
 import cz.ucenislovicek.databinding.FragmentPrehledBinding;
 
 
 public class FragmentPrehled extends Fragment {
 
-    TextView tv_jazyk, tv_batch;
-    Spinner jazyk;
-    Button zobraz;
-    List<String> childList = new ArrayList<>(), groupList = new ArrayList<>();
-    Map<String, List<String>> mobileCollection = new LinkedHashMap<>();
-    ExpandableListView expandableListView;
-    MyExpandableListAdapter expandableListAdapter;
+    private TextView header1, header2, bg1, bg2;
+    private Spinner languagePicker;
+    private Button show;
+    private List<String> hundredList = new ArrayList<>();
+    private Map<String, List<String>> hundredCollection = new LinkedHashMap<>();
+    private ExpandableListView expandableListView;
+    private MyExpandableListAdapter expandableListAdapter;
+    private ProgressBar loading;
 
     @Override
     public void onResume() {
         super.onResume();
-        new FragmentPrehled.getJazyky().execute();
+        new getLanguages().execute();
     }
 
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         FragmentPrehledBinding binding = FragmentPrehledBinding.inflate(inflater, container, false);
         View root = binding.getRoot();
 
-        tv_jazyk = binding.textView10;
-        tv_batch = binding.textView11;
-        jazyk = binding.jazyk2;
-        expandableListView = binding.elvMobiles;
-        zobraz = binding.button5;
+        header1 = binding.header1;
+        header2 = binding.header2;
+        bg1 = binding.bg1;
+        bg2 = binding.bg2;
+        languagePicker = binding.languagePicker;
+        expandableListView = binding.elv;
+        show = binding.show;
+        loading = binding.loading;
 
-        jazyk.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+        languagePicker.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l) {
-                new loadBatches().execute();
+                new getBatches().execute();
             }
 
             @Override
@@ -74,50 +85,107 @@ public class FragmentPrehled extends Fragment {
             }
         });
 
-        new FragmentPrehled.getJazyky().execute();
+        new getLanguages().execute();
         return root;
     }
 
-    @SuppressLint("StaticFieldLeak")
-    private class getSlovicka extends AsyncTask<Void, Void, Void> {
+    public void changeVisibility(boolean on) {
+        if (on) {
+            bg1.setVisibility(View.VISIBLE);
+            bg2.setVisibility(View.VISIBLE);
+            show.setVisibility(View.VISIBLE);
+            languagePicker.setVisibility(View.VISIBLE);
+            expandableListView.setVisibility(View.VISIBLE);
+            header1.setVisibility(View.VISIBLE);
+            header2.setVisibility(View.VISIBLE);
 
-        List<String> batches, stovky;
-        ArrayList<String> cesky = new ArrayList<>();
-        ArrayList<String> cizi = new ArrayList<>();
+            loading.setVisibility(View.INVISIBLE);
+        } else {
+            bg1.setVisibility(View.INVISIBLE);
+            bg2.setVisibility(View.INVISIBLE);
+            show.setVisibility(View.INVISIBLE);
+            languagePicker.setVisibility(View.INVISIBLE);
+            expandableListView.setVisibility(View.INVISIBLE);
+            header1.setVisibility(View.INVISIBLE);
+            header2.setVisibility(View.INVISIBLE);
+
+            loading.setVisibility(View.VISIBLE);
+        }
+    }
+
+    @SuppressLint("StaticFieldLeak")
+    private class getVocabulary extends AsyncTask<Void, Void, Void> {
+
+        List<String> batches, hundreds;
+        ArrayList<String> czech = new ArrayList<>();
+        ArrayList<String> foreign = new ArrayList<>();
         ArrayList<String> batch = new ArrayList<>();
 
-        public getSlovicka(List<String> batches, List<String> stovky) {
+        public getVocabulary(List<String> batches, List<String> hundreds) {
             this.batches = batches;
-            this.stovky = stovky;
+            this.hundreds = hundreds;
         }
 
         @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+            changeVisibility(false);
+        }
+
+        @RequiresApi(api = Build.VERSION_CODES.O)
+        @Override
         protected Void doInBackground(Void... voids) {
-
-            try {
-                Connection con = DriverManager.getConnection("jdbc:mysql://localhost/dk-313_uceniSlovicek?serverTimezone=Europe/Prague", "dk-313", "GyArab14");
-                StringBuilder s = new StringBuilder("select ceskeSlovicko, ciziSlovicko, batch from slovicka where jazyk=? and ");
-                for (int i = 0; i < batches.size(); i++) {
-                    s.append("batch=\"").append(batches.get(i)).append("\" or ");
-                }
-                for (int i = 0; i < stovky.size(); i++) {
-                    s.append("stovka=\"").append(stovky.get(i).charAt(0)).append("\" or ");
-                }
-                String sql = s.substring(0, s.length() - 4);
-                sql += " order by stovka, batch";
-
-                PreparedStatement st = con.prepareStatement(sql);
-                st.setString(1, (String) jazyk.getSelectedItem());
-                ResultSet rs = st.executeQuery();
-                while (rs.next()) {
-                    cesky.add(rs.getString("ceskeSlovicko"));
-                    cizi.add(rs.getString("ciziSlovicko"));
-                    batch.add(rs.getString("batch"));
-                }
-            } catch (SQLException e) {
-                e.printStackTrace();
+            for (String batch : batches) {
+                callApi(batch, "batch");
+            }
+            for (String hundred : hundreds) {
+                callApi(hundred.substring(0, 1), "stovka");
             }
             return null;
+        }
+
+        @RequiresApi(api = Build.VERSION_CODES.O)
+        public void callApi(String b, String parameter) {
+            try {
+                String group;
+                if(languagePicker.getSelectedItem().equals("AJ")){
+                    group = SharedPrefs.getString(getContext(), SharedPrefs.SKUPINA_AJ);
+                } else {
+                    group = SharedPrefs.getString(getContext(), SharedPrefs.SKUPINA_NJ);
+                }
+                HttpURLConnection con = (HttpURLConnection) new URL("https://langmaster.wp4u.cz/api/api.php?jazyk=" + languagePicker.getSelectedItem() + "&" + parameter + "=" + b + "&skupina=" + group).openConnection();
+                con.setRequestProperty("Authorization", "Basic " + new String(Base64.getEncoder().encode((SharedPrefs.DB_USERNAME + ":" + SharedPrefs.DB_PASSWORD).getBytes(StandardCharsets.UTF_8))));
+                con.setRequestMethod("GET");
+
+                if (con.getResponseCode() == 200) {
+                    BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()));
+                    String inputLine;
+                    StringBuilder content = new StringBuilder();
+                    while ((inputLine = in.readLine()) != null) {
+                        content.append(inputLine);
+                    }
+                    in.close();
+
+                    JSONArray myArray = new JSONArray(content.toString());
+                    for (int i = 0; i < myArray.length(); i++) {
+                        czech.add((String) myArray.getJSONObject(i).get("ceskeSlovicko"));
+                        foreign.add((String) myArray.getJSONObject(i).get("ciziSlovicko"));
+                        batch.add((String) myArray.getJSONObject(i).get("batch"));
+                    }
+                } else {
+                    BufferedReader in = new BufferedReader(new InputStreamReader(con.getErrorStream()));
+                    String inputLine;
+                    StringBuilder content = new StringBuilder();
+                    while ((inputLine = in.readLine()) != null) {
+                        content.append(inputLine);
+                    }
+                    in.close();
+                    throw new IllegalStateException((String) new JSONObject(content.toString()).get("error_description"));
+
+                }
+            } catch (IOException | JSONException e) {
+                e.printStackTrace();
+            }
         }
 
         @RequiresApi(api = Build.VERSION_CODES.N)
@@ -125,29 +193,63 @@ public class FragmentPrehled extends Fragment {
         protected void onPostExecute(Void unused) {
             super.onPostExecute(unused);
             Intent i = new Intent(getContext(), Prehled.class);
-            i.putStringArrayListExtra("cesky", cesky);
-            i.putStringArrayListExtra("cizi", cizi);
+            i.putStringArrayListExtra("czech", czech);
+            i.putStringArrayListExtra("foreign", foreign);
             i.putStringArrayListExtra("batch", batch);
+            i.putExtra("group", (String) languagePicker.getSelectedItem());
             startActivity(i);
+            changeVisibility(true);
         }
     }
 
     @SuppressLint("StaticFieldLeak")
-    private class getJazyky extends AsyncTask<Void, Void, Void> {
+    private class getLanguages extends AsyncTask<Void, Void, Void> {
 
-        List<String> jazyky = new ArrayList<>();
+        List<String> languages = new ArrayList<>();
 
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+            changeVisibility(false);
+        }
+
+        @RequiresApi(api = Build.VERSION_CODES.O)
         @Override
         protected Void doInBackground(Void... voids) {
 
             try {
-                Connection con = DriverManager.getConnection("jdbc:mysql://localhost/dk-313_uceniSlovicek?serverTimezone=Europe/Prague", "dk-313", "GyArab14");
-                Statement st = con.createStatement();
-                ResultSet rs = st.executeQuery("select distinct jazyk from slovicka");
-                while (rs.next()) {
-                    jazyky.add(rs.getString("jazyk"));
+                HttpURLConnection con = (HttpURLConnection) new URL("https://langmaster.wp4u.cz/api/api.php").openConnection();
+                con.setRequestProperty("Authorization", "Basic " + new String(Base64.getEncoder().encode((SharedPrefs.DB_USERNAME + ":" + SharedPrefs.DB_PASSWORD).getBytes(StandardCharsets.UTF_8))));
+                con.setRequestMethod("GET");
+
+                if (con.getResponseCode() == 200) {
+                    BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()));
+                    String inputLine;
+                    StringBuilder content = new StringBuilder();
+                    while ((inputLine = in.readLine()) != null) {
+                        content.append(inputLine);
+                    }
+                    in.close();
+
+                    JSONArray myArray = new JSONArray(content.toString());
+                    for (int i = 0; i < myArray.length(); i++) {
+                        String language = (String) myArray.getJSONObject(i).get("jazyk");
+                        if (!languages.contains(language)) {
+                            languages.add(language);
+                        }
+                    }
+                } else {
+                    BufferedReader in = new BufferedReader(new InputStreamReader(con.getErrorStream()));
+                    String inputLine;
+                    StringBuilder content = new StringBuilder();
+                    while ((inputLine = in.readLine()) != null) {
+                        content.append(inputLine);
+                    }
+                    in.close();
+                    throw new IllegalStateException((String) new JSONObject(content.toString()).get("error_description"));
+
                 }
-            } catch (SQLException e) {
+            } catch (IOException | JSONException e) {
                 e.printStackTrace();
             }
             return null;
@@ -156,44 +258,88 @@ public class FragmentPrehled extends Fragment {
         @Override
         protected void onPostExecute(Void unused) {
             super.onPostExecute(unused);
-            ArrayAdapter<String> adapter = new ArrayAdapter<>(getContext(), R.layout.spinner_item, jazyky);
+            ArrayAdapter<String> adapter = new ArrayAdapter<>(getContext(), R.layout.spinner_item, languages);
             adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-            jazyk.setAdapter(adapter);
-            new loadBatches().execute();
+            languagePicker.setAdapter(adapter);
+            changeVisibility(true);
+            new getBatches().execute();
         }
     }
 
     @SuppressLint("StaticFieldLeak")
-    private class loadBatches extends AsyncTask<Void, Void, Void> {
+    private class getBatches extends AsyncTask<Void, Void, Void> {
 
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+            changeVisibility(false);
+        }
+
+        @RequiresApi(api = Build.VERSION_CODES.O)
         @Override
         protected Void doInBackground(Void... voids) {
 
-            try {
-                Connection con = DriverManager.getConnection("jdbc:mysql://localhost/dk-313_uceniSlovicek?serverTimezone=Europe/Prague", "dk-313", "GyArab14");
-                PreparedStatement st = con.prepareStatement("select distinct stovka, batch from slovicka where jazyk=? order by stovka");
-                st.setString(1, (String) jazyk.getSelectedItem());
-                ResultSet rs = st.executeQuery();
+            List<Integer> hundreds = new ArrayList<>();
+            List<String> batches = new ArrayList<>();
 
-                childList = new ArrayList<>();
-                mobileCollection = new LinkedHashMap<>();
-                groupList = new ArrayList<>();
-                int lastStovka = 1;
-                groupList.add(lastStovka + ".stovka");
-                while (rs.next()) {
-                    int aktualStovka = rs.getInt("stovka");
-                    if (lastStovka == aktualStovka) {
-                        childList.add(rs.getString("batch"));
+            try {
+                String group;
+                if(languagePicker.getSelectedItem().equals("AJ")){
+                    group = SharedPrefs.getString(getContext(), SharedPrefs.SKUPINA_AJ);
+                } else {
+                    group = SharedPrefs.getString(getContext(), SharedPrefs.SKUPINA_NJ);
+                }
+                HttpURLConnection con = (HttpURLConnection) new URL("https://langmaster.wp4u.cz/api/api.php?jazyk=" + languagePicker.getSelectedItem() + "&filter=stovka,batch&skupina=" + group).openConnection();
+                con.setRequestProperty("Authorization", "Basic " + new String(Base64.getEncoder().encode((SharedPrefs.DB_USERNAME + ":" + SharedPrefs.DB_PASSWORD).getBytes(StandardCharsets.UTF_8))));
+                con.setRequestMethod("GET");
+
+                if (con.getResponseCode() == 200) {
+                    BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()));
+                    String inputLine;
+                    StringBuilder content = new StringBuilder();
+                    while ((inputLine = in.readLine()) != null) {
+                        content.append(inputLine);
+                    }
+                    in.close();
+                    JSONArray myArray = new JSONArray(content.toString());
+                    for (int i = 0; i < myArray.length(); i++) {
+                        String batch = (String) myArray.getJSONObject(i).get("batch");
+                        if (!batches.contains(batch)) {
+                            hundreds.add((Integer) myArray.getJSONObject(i).get("stovka"));
+                            batches.add(batch);
+                        }
+                    }
+                } else {
+                    BufferedReader in = new BufferedReader(new InputStreamReader(con.getErrorStream()));
+                    String inputLine;
+                    StringBuilder content = new StringBuilder();
+                    while ((inputLine = in.readLine()) != null) {
+                        content.append(inputLine);
+                    }
+                    in.close();
+                    throw new IllegalStateException((String) new JSONObject(content.toString()).get("error_description"));
+                }
+
+                List<String> batchList = new ArrayList<>();
+
+                hundredCollection = new LinkedHashMap<>();
+                hundredList = new ArrayList<>();
+                int lastHundred = 1;
+                hundredList.add(lastHundred + ".stovka");
+                for (int i = 0; i < batches.size(); i++) {
+                    int aktualHundred = hundreds.get(i);
+                    if (lastHundred == aktualHundred) {
+                        batchList.add(batches.get(i));
                     } else {
-                        mobileCollection.put(lastStovka + ".stovka", childList);
-                        lastStovka = aktualStovka;
-                        groupList.add(aktualStovka + ".stovka");
-                        childList = new ArrayList<>();
-                        childList.add(rs.getString("batch"));
+                        hundredCollection.put(lastHundred + ".stovka", batchList);
+                        lastHundred = aktualHundred;
+                        hundredList.add(aktualHundred + ".stovka");
+                        batchList = new ArrayList<>();
+                        batchList.add(batches.get(i));
                     }
                 }
-                mobileCollection.put(lastStovka + ".stovka", childList);
-            } catch (SQLException e) {
+                hundredCollection.put(lastHundred + ".stovka", batchList);
+            } catch (IOException | JSONException e) {
                 e.printStackTrace();
             }
             return null;
@@ -202,7 +348,9 @@ public class FragmentPrehled extends Fragment {
         @Override
         protected void onPostExecute(Void unused) {
             super.onPostExecute(unused);
-            expandableListAdapter = new MyExpandableListAdapter(getContext(), groupList, mobileCollection);
+            changeVisibility(true);
+
+            expandableListAdapter = new MyExpandableListAdapter(getContext(), hundredList, hundredCollection);
             expandableListView.setAdapter(expandableListAdapter);
             expandableListView.setOnGroupExpandListener(new ExpandableListView.OnGroupExpandListener() {
                 int lastExpandedPosition = -1;
@@ -215,32 +363,29 @@ public class FragmentPrehled extends Fragment {
                     lastExpandedPosition = i;
                 }
             });
-            zobraz.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View view) {
-                    List<String> batch = new ArrayList<>();
-                    List<String> stovky = new ArrayList<>();
-                    MyExpandableListAdapter.Group[] groupes = expandableListAdapter.getGroupes();
-                    for (MyExpandableListAdapter.Group g : groupes) {
-                        for (CheckBox cb : g.getChilds()) {
-                            if (cb != null) {
-                                if (cb.isChecked()) {
-                                    batch.add((String) cb.getTag());
-                                }
-                            } else {
-                                if (g.getGroupBox().isChecked()) {
-                                    String s = (String) g.getGroupBox().getTag();
-                                    stovky.add(s.split("@")[0]);
-                                    break;
-                                }
+            show.setOnClickListener(view -> {
+                List<String> batches = new ArrayList<>();
+                List<String> hundreds = new ArrayList<>();
+                MyExpandableListAdapter.Group[] groupes = expandableListAdapter.getGroupes();
+                for (MyExpandableListAdapter.Group g : groupes) {
+                    for (CheckBox cb : g.getBatches()) {
+                        if (cb != null) {
+                            if (cb.isChecked()) {
+                                batches.add((String) cb.getTag());
+                            }
+                        } else {
+                            if (g.getHundredBox().isChecked()) {
+                                String s = (String) g.getHundredBox().getTag();
+                                hundreds.add(s.split("@")[0]);
+                                break;
                             }
                         }
                     }
-                    if(stovky.isEmpty() && batch.isEmpty()){
-                        Toast.makeText(getContext(), "Musíte vybrat alespoň jednu stovku nebo batch.", Toast.LENGTH_LONG).show();
-                    } else {
-                        new getSlovicka(batch, stovky).execute();
-                    }
+                }
+                if (hundreds.isEmpty() && batches.isEmpty()) {
+                    Toast.makeText(getContext(), "Musíte vybrat alespoň jednu stovku nebo batch.", Toast.LENGTH_LONG).show();
+                } else {
+                    new getVocabulary(batches, hundreds).execute();
                 }
             });
         }

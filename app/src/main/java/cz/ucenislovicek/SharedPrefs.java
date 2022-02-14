@@ -17,6 +17,10 @@ public class SharedPrefs {
     public static final String SKUPINA_NJ = "skupina_nj";
     public static final String TOKEN = "token";
     public static final String UZIVID = "-1";
+    public static final String DB_USERNAME = "admin";
+    public static final String DB_PASSWORD = "heslo";
+
+    public static boolean firstTimeInLogin = true;
 
     public static String getString(Context context, String key) {
         return PreferenceManager.getDefaultSharedPreferences(context).getString(key, "");

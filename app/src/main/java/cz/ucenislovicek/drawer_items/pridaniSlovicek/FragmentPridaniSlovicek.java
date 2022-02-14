@@ -2,7 +2,9 @@ package cz.ucenislovicek.drawer_items.pridaniSlovicek;
 
 import android.annotation.SuppressLint;
 import android.app.AlertDialog;
+import android.graphics.PorterDuff;
 import android.os.AsyncTask;
+import android.os.Build;
 import android.os.Bundle;
 import android.text.InputType;
 import android.view.LayoutInflater;
@@ -20,30 +22,43 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.RequiresApi;
 import androidx.fragment.app.Fragment;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.Comparator;
 import java.util.List;
 
 import cz.ucenislovicek.R;
+import cz.ucenislovicek.SharedPrefs;
 import cz.ucenislovicek.databinding.FragmentPridaniSlovicekBinding;
 
 public class FragmentPridaniSlovicek extends Fragment {
 
 
-    Spinner jazyk, batch, stovka;
-    EditText slovickoCizi, slovickoCesky;
-    Button pridat;
-    ImageButton novyBatch, novaStovka;
-    TextView tw1, tw2;
-    ProgressBar pb;
+    Spinner languagePicker, batchPicker, hundredPicker;
+    EditText vocabForeign, vocabCzech;
+    Button addWord;
+    ImageButton newBatch, newHundred;
+    TextView bg1, bg2, header1, header2, header3;
+    ProgressBar progressBar;
 
 
     @SuppressLint("NewApi")
@@ -51,38 +66,41 @@ public class FragmentPridaniSlovicek extends Fragment {
         FragmentPridaniSlovicekBinding binding = FragmentPridaniSlovicekBinding.inflate(inflater, container, false);
         View root = binding.getRoot();
 
-        slovickoCesky = binding.slovickoCesky;
-        slovickoCizi = binding.slovickoCizi;
-        pridat = binding.pridatslovicko;
-        novyBatch = binding.novyBatch;
-        novaStovka = binding.novaStovka;
-        tw1 = binding.textView3;
-        tw2 = binding.textView4;
-        pb = binding.progressBar2;
-        batch = binding.volbaBatche;
-        jazyk = binding.volbaJazyku;
-        stovka = binding.volbaStovky;
+        vocabCzech = binding.vocabCzech;
+        vocabForeign = binding.vocabForeign;
+        addWord = binding.addWord;
+        newBatch = binding.newBatch;
+        newHundred = binding.newHundred;
+        bg1 = binding.bg1;
+        bg2 = binding.bg2;
+        progressBar = binding.loading;
+        batchPicker = binding.batchPicker;
+        languagePicker = binding.languagePicker;
+        hundredPicker = binding.hundredPicker;
+        header1 = binding.header1;
+        header2 = binding.header2;
+        header3 = binding.header3;
 
-        slovickoCesky.setOnEditorActionListener((v, actionId, event) -> {
-            if(actionId == EditorInfo.IME_ACTION_DONE){
-                pridat.performClick();
+        vocabCzech.setOnEditorActionListener((v, actionId, event) -> {
+            if (actionId == EditorInfo.IME_ACTION_DONE) {
+                addWord.performClick();
                 return true;
             }
             return false;
         });
 
-        slovickoCizi.setOnEditorActionListener((v, actionId, event) -> {
-            if(actionId == EditorInfo.IME_ACTION_DONE){
-                slovickoCesky.setFocusable(true);
+        vocabForeign.setOnEditorActionListener((v, actionId, event) -> {
+            if (actionId == EditorInfo.IME_ACTION_DONE) {
+                vocabCzech.setFocusable(true);
                 return true;
             }
             return false;
         });
 
-        jazyk.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+        languagePicker.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l) {
-                new nactiStovky().execute();
+                new loadHundreds().execute();
             }
 
             @Override
@@ -91,7 +109,7 @@ public class FragmentPridaniSlovicek extends Fragment {
             }
         });
 
-        stovka.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+        hundredPicker.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l) {
                 new loadBatches().execute();
@@ -103,7 +121,7 @@ public class FragmentPridaniSlovicek extends Fragment {
             }
         });
 
-        novyBatch.setOnClickListener(view -> {
+        newBatch.setOnClickListener(view -> {
             final EditText et = new EditText(getContext());
             et.setHint("Zadejte název nového batche:");
             final AlertDialog dialog = new AlertDialog.Builder(getContext()).setTitle("Nový batch").setView(et).setPositiveButton("OK", null).create();
@@ -111,24 +129,24 @@ public class FragmentPridaniSlovicek extends Fragment {
             dialog.setOnShowListener(dialogInterface -> {
                 Button button = dialog.getButton(AlertDialog.BUTTON_POSITIVE);
                 button.setOnClickListener(view12 -> {
-                    String zadanyBatche = et.getText().toString();
-                    boolean obsahuje = false;
-                    for (int i = 0; i < stovka.getAdapter().getCount(); i++) {
-                        String s = (String) stovka.getItemAtPosition(i);
-                        if (s.equals(zadanyBatche)) {
-                            obsahuje = true;
+                    String typedBatch = et.getText().toString();
+                    boolean contains = false;
+                    for (int i = 0; i < hundredPicker.getAdapter().getCount(); i++) {
+                        String s = (String) hundredPicker.getItemAtPosition(i);
+                        if (s.equals(typedBatch)) {
+                            contains = true;
                             break;
                         }
                     }
-                    if (obsahuje) {
+                    if (contains) {
                         et.setError("Takový batch již existuje");
                         et.setText("");
                     } else {
-                        ArrayAdapter<String> adapter = (ArrayAdapter<String>) batch.getAdapter();
-                        adapter.add(zadanyBatche);
+                        ArrayAdapter<String> adapter = (ArrayAdapter<String>) batchPicker.getAdapter();
+                        adapter.add(typedBatch);
                         adapter.sort(Comparator.naturalOrder());
-                        batch.setAdapter(adapter);
-                        batch.setSelection(adapter.getPosition(zadanyBatche));
+                        batchPicker.setAdapter(adapter);
+                        batchPicker.setSelection(adapter.getPosition(typedBatch));
                         dialog.dismiss();
                     }
                 });
@@ -136,9 +154,10 @@ public class FragmentPridaniSlovicek extends Fragment {
             dialog.show();
         });
 
-        novaStovka.setOnClickListener(view -> {
+        newHundred.setOnClickListener(view -> {
             final EditText et = new EditText(getContext());
             et.setHint("Zadejte pořadové číslo nové stovky:");
+            et.getBackground().setColorFilter(getResources().getColor(R.color.colorPrimary), PorterDuff.Mode.SRC_ATOP);
             et.setInputType(InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_DECIMAL | InputType.TYPE_NUMBER_FLAG_SIGNED);
             final AlertDialog dialog = new AlertDialog.Builder(getContext()).setTitle("Nová stovka").setView(et).setPositiveButton("OK", null).create();
 
@@ -146,25 +165,25 @@ public class FragmentPridaniSlovicek extends Fragment {
                 Button button = dialog.getButton(AlertDialog.BUTTON_POSITIVE);
                 button.setOnClickListener(view1 -> {
                     try {
-                        int zadaneCislo = Integer.parseInt(et.getText().toString());
-                        boolean obsahuje = false;
-                        for (int i = 0; i < stovka.getAdapter().getCount(); i++) {
-                            String s = (String) stovka.getItemAtPosition(i);
-                            int cisloStovky = Integer.parseInt(String.valueOf(s.charAt(0)));
-                            if (cisloStovky == zadaneCislo) {
-                                obsahuje = true;
+                        int typedNumber = Integer.parseInt(et.getText().toString());
+                        boolean contains = false;
+                        for (int i = 0; i < hundredPicker.getAdapter().getCount(); i++) {
+                            String s = (String) hundredPicker.getItemAtPosition(i);
+                            int hundredNumber = Integer.parseInt(String.valueOf(s.charAt(0)));
+                            if (hundredNumber == typedNumber) {
+                                contains = true;
                                 break;
                             }
                         }
-                        if (obsahuje) {
+                        if (contains) {
                             et.setError("Taková stovka již existuje");
                             et.setText("");
                         } else {
-                            ArrayAdapter<String> adapter = (ArrayAdapter<String>) stovka.getAdapter();
-                            adapter.add(zadaneCislo + ".stovka");
+                            ArrayAdapter<String> adapter = (ArrayAdapter<String>) hundredPicker.getAdapter();
+                            adapter.add(typedNumber + ".stovka");
                             adapter.sort(Comparator.naturalOrder());
-                            stovka.setAdapter(adapter);
-                            stovka.setSelection(adapter.getPosition(zadaneCislo + ".stovka"));
+                            hundredPicker.setAdapter(adapter);
+                            hundredPicker.setSelection(adapter.getPosition(typedNumber + ".stovka"));
                             dialog.dismiss();
                         }
                     } catch (NumberFormatException e) {
@@ -176,47 +195,114 @@ public class FragmentPridaniSlovicek extends Fragment {
             dialog.show();
         });
 
-        pridat.setOnClickListener(view -> {
-            if (slovickoCizi.getText().toString().trim().equals("") && slovickoCesky.getText().toString().trim().equals("")) {
-                slovickoCizi.setError("Špatně zadaná hodnota");
-                slovickoCesky.setError("Špatně zadaná hodnota");
+        addWord.setOnClickListener(view -> {
+            if (vocabForeign.getText().toString().trim().equals("") && vocabCzech.getText().toString().trim().equals("")) {
+                vocabForeign.setError("Špatně zadaná hodnota");
+                vocabCzech.setError("Špatně zadaná hodnota");
                 return;
             }
-            if (slovickoCizi.getText().toString().trim().equals("")) {
-                slovickoCizi.setError("Špatně zadaná hodnota");
+            if (vocabForeign.getText().toString().trim().equals("")) {
+                vocabForeign.setError("Špatně zadaná hodnota");
                 return;
             }
-            if (slovickoCesky.getText().toString().trim().equals("")) {
-                slovickoCesky.setError("Špatně zadaná hodnota");
+            if (vocabCzech.getText().toString().trim().equals("")) {
+                vocabCzech.setError("Špatně zadaná hodnota");
                 return;
             }
-            if (batch.getSelectedItem() == null) {
+            if (batchPicker.getSelectedItem() == null) {
                 Toast.makeText(getContext(), "Není vybrán žádný batch", Toast.LENGTH_SHORT).show();
                 return;
             }
-            new getIdSlovicka().execute();
+            new addWord().execute();
         });
 
-        new getJazyky().execute();
+        new loadLanguages().execute();
 
         return root;
     }
 
-    private class getJazyky extends AsyncTask<Void, Void, Void> {
+    public void changeVisibility(boolean on) {
+        if (on) {
+            languagePicker.setVisibility(View.VISIBLE);
+            batchPicker.setVisibility(View.VISIBLE);
+            hundredPicker.setVisibility(View.VISIBLE);
+            vocabCzech.setVisibility(View.VISIBLE);
+            vocabForeign.setVisibility(View.VISIBLE);
+            header1.setVisibility(View.VISIBLE);
+            header2.setVisibility(View.VISIBLE);
+            header3.setVisibility(View.VISIBLE);
+            newHundred.setVisibility(View.VISIBLE);
+            newBatch.setVisibility(View.VISIBLE);
+            addWord.setVisibility(View.VISIBLE);
+            bg1.setVisibility(View.VISIBLE);
+            bg2.setVisibility(View.VISIBLE);
 
-        List<String> jazyky = new ArrayList<>();
+            progressBar.setVisibility(View.INVISIBLE);
+        } else {
+            languagePicker.setVisibility(View.INVISIBLE);
+            batchPicker.setVisibility(View.INVISIBLE);
+            hundredPicker.setVisibility(View.INVISIBLE);
+            vocabCzech.setVisibility(View.INVISIBLE);
+            vocabForeign.setVisibility(View.INVISIBLE);
+            header1.setVisibility(View.INVISIBLE);
+            header2.setVisibility(View.INVISIBLE);
+            header3.setVisibility(View.INVISIBLE);
+            newHundred.setVisibility(View.INVISIBLE);
+            newBatch.setVisibility(View.INVISIBLE);
+            addWord.setVisibility(View.INVISIBLE);
+            bg1.setVisibility(View.INVISIBLE);
+            bg2.setVisibility(View.INVISIBLE);
+
+            progressBar.setVisibility(View.VISIBLE);
+        }
+    }
+
+    private class loadLanguages extends AsyncTask<Void, Void, Void> {
+
+        List<String> languages = new ArrayList<>();
 
         @Override
-        protected Void doInBackground(Void... voids) {
+        protected void onPreExecute() {
+            super.onPreExecute();
+            changeVisibility(false);
+        }
 
+        @RequiresApi(api = Build.VERSION_CODES.O)
+        @Override
+        protected Void doInBackground(Void... voids) {
             try {
-                Connection con = DriverManager.getConnection("jdbc:mysql://localhost/dk-313_uceniSlovicek?serverTimezone=Europe/Prague", "dk-313", "GyArab14");
-                Statement st = con.createStatement();
-                ResultSet rs = st.executeQuery("select distinct jazyk from slovicka");
-                while (rs.next()) {
-                    jazyky.add(rs.getString("jazyk"));
+                HttpURLConnection con = (HttpURLConnection) new URL("https://langmaster.wp4u.cz/api/api.php").openConnection();
+                con.setRequestProperty("Authorization", "Basic " + new String(Base64.getEncoder().encode((SharedPrefs.DB_USERNAME + ":" + SharedPrefs.DB_PASSWORD).getBytes(StandardCharsets.UTF_8))));
+                con.setRequestMethod("GET");
+
+                if (con.getResponseCode() == 200) {
+                    BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()));
+                    String inputLine;
+                    StringBuilder content = new StringBuilder();
+                    while ((inputLine = in.readLine()) != null) {
+                        content.append(inputLine);
+                    }
+                    in.close();
+
+                    JSONArray myArray = new JSONArray(content.toString());
+                    for (int i = 0; i < myArray.length(); i++) {
+                        String language = (String) myArray.getJSONObject(i).get("jazyk");
+                        if (!languages.contains(language)) {
+                            languages.add(language);
+                        }
+                    }
+                } else {
+                    BufferedReader in = new BufferedReader(new InputStreamReader(con.getErrorStream()));
+                    String inputLine;
+                    StringBuilder content = new StringBuilder();
+                    while ((inputLine = in.readLine()) != null) {
+                        content.append(inputLine);
+                    }
+                    in.close();
+                    throw new IllegalStateException((String) new JSONObject(content.toString()).get("error_description"));
+
                 }
-            } catch (SQLException e) {
+            } catch (IOException | JSONException e) {
                 e.printStackTrace();
             }
             return null;
@@ -225,35 +311,61 @@ public class FragmentPridaniSlovicek extends Fragment {
         @Override
         protected void onPostExecute(Void unused) {
             super.onPostExecute(unused);
-            ArrayAdapter<String> adapter = new ArrayAdapter<>(getContext(), R.layout.spinner_item, jazyky);
+            ArrayAdapter<String> adapter = new ArrayAdapter<>(getContext(), R.layout.spinner_item, languages);
             adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-            jazyk.setAdapter(adapter);
+            languagePicker.setAdapter(adapter);
+            changeVisibility(true);
         }
     }
 
     private class loadBatches extends AsyncTask<Void, Void, Void> {
 
-        List<String> batch = new ArrayList<>();
+        List<String> batchList = new ArrayList<>();
 
         @Override
         protected void onPreExecute() {
             super.onPreExecute();
-            pb.setVisibility(View.VISIBLE);
+            changeVisibility(false);
         }
 
+        @RequiresApi(api = Build.VERSION_CODES.O)
         @Override
         protected Void doInBackground(Void... voids) {
+
             try {
-                Connection con = DriverManager.getConnection("jdbc:mysql://localhost/dk-313_uceniSlovicek?serverTimezone=Europe/Prague", "dk-313", "GyArab14");
-                PreparedStatement st = con.prepareStatement("select distinct batch from slovicka where jazyk=? and stovka=?");
-                st.setString(1, (String) jazyk.getSelectedItem());
-                String s = (String) stovka.getSelectedItem();
-                st.setInt(2, Integer.parseInt(String.valueOf(s.charAt(0))));
-                ResultSet rs = st.executeQuery();
-                while (rs.next()) {
-                    batch.add(rs.getString("batch"));
+                String hundred = (String) hundredPicker.getSelectedItem();
+                HttpURLConnection con = (HttpURLConnection) new URL("https://langmaster.wp4u.cz/api/api.php?jazyk=" + languagePicker.getSelectedItem() + "&stovka=" + hundred.charAt(0)).openConnection();
+                con.setRequestProperty("Authorization", "Basic " + new String(Base64.getEncoder().encode((SharedPrefs.DB_USERNAME + ":" + SharedPrefs.DB_PASSWORD).getBytes(StandardCharsets.UTF_8))));
+                con.setRequestMethod("GET");
+
+                if (con.getResponseCode() == 200) {
+                    BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()));
+                    String inputLine;
+                    StringBuilder content = new StringBuilder();
+                    while ((inputLine = in.readLine()) != null) {
+                        content.append(inputLine);
+                    }
+                    in.close();
+
+                    JSONArray myArray = new JSONArray(content.toString());
+                    for (int i = 0; i < myArray.length(); i++) {
+                        String batch = (String) myArray.getJSONObject(i).get("batch");
+                        if (!batchList.contains(batch)) {
+                            batchList.add(batch);
+                        }
+                    }
+                } else {
+                    BufferedReader in = new BufferedReader(new InputStreamReader(con.getErrorStream()));
+                    String inputLine;
+                    StringBuilder content = new StringBuilder();
+                    while ((inputLine = in.readLine()) != null) {
+                        content.append(inputLine);
+                    }
+                    in.close();
+                    throw new IllegalStateException((String) new JSONObject(content.toString()).get("error_description"));
+
                 }
-            } catch (SQLException e) {
+            } catch (IOException | JSONException e) {
                 e.printStackTrace();
             }
             return null;
@@ -262,36 +374,60 @@ public class FragmentPridaniSlovicek extends Fragment {
         @Override
         protected void onPostExecute(Void unused) {
             super.onPostExecute(unused);
-            ArrayAdapter<String> adapter = new ArrayAdapter<>(getContext(), R.layout.spinner_item, batch);
+            ArrayAdapter<String> adapter = new ArrayAdapter<>(getContext(), R.layout.spinner_item, batchList);
             adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-            FragmentPridaniSlovicek.this.batch.setAdapter(adapter);
-
-            pb.setVisibility(View.INVISIBLE);
+            batchPicker.setAdapter(adapter);
+            changeVisibility(true);
         }
     }
 
-    private class nactiStovky extends AsyncTask<Void, Void, Void> {
+    private class loadHundreds extends AsyncTask<Void, Void, Void> {
 
-        List<String> stovky = new ArrayList<>();
+        List<String> hundreds = new ArrayList<>();
 
         @Override
         protected void onPreExecute() {
             super.onPreExecute();
-            pb.setVisibility(View.VISIBLE);
+            changeVisibility(false);
         }
 
+        @RequiresApi(api = Build.VERSION_CODES.O)
         @Override
         protected Void doInBackground(Void... voids) {
 
             try {
-                Connection con = DriverManager.getConnection("jdbc:mysql://localhost/dk-313_uceniSlovicek?serverTimezone=Europe/Prague", "dk-313", "GyArab14");
-                PreparedStatement st = con.prepareStatement("select distinct stovka from slovicka where jazyk=?");
-                st.setString(1, (String) jazyk.getSelectedItem());
-                ResultSet rs = st.executeQuery();
-                while (rs.next()) {
-                    stovky.add(rs.getInt("stovka") + ".stovka");
+                HttpURLConnection con = (HttpURLConnection) new URL("https://langmaster.wp4u.cz/api/api.php?jazyk=" + languagePicker.getSelectedItem()).openConnection();
+                con.setRequestProperty("Authorization", "Basic " + new String(Base64.getEncoder().encode((SharedPrefs.DB_USERNAME + ":" + SharedPrefs.DB_PASSWORD).getBytes(StandardCharsets.UTF_8))));
+                con.setRequestMethod("GET");
+
+                if (con.getResponseCode() == 200) {
+                    BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()));
+                    String inputLine;
+                    StringBuilder content = new StringBuilder();
+                    while ((inputLine = in.readLine()) != null) {
+                        content.append(inputLine);
+                    }
+                    in.close();
+
+                    JSONArray myArray = new JSONArray(content.toString());
+                    for (int i = 0; i < myArray.length(); i++) {
+                        String hundred = myArray.getJSONObject(i).getString("stovka");
+                        if (!hundreds.contains(hundred)) {
+                            hundreds.add(hundred);
+                        }
+                    }
+                } else {
+                    BufferedReader in = new BufferedReader(new InputStreamReader(con.getErrorStream()));
+                    String inputLine;
+                    StringBuilder content = new StringBuilder();
+                    while ((inputLine = in.readLine()) != null) {
+                        content.append(inputLine);
+                    }
+                    in.close();
+                    throw new IllegalStateException((String) new JSONObject(content.toString()).get("error_description"));
+
                 }
-            } catch (SQLException e) {
+            } catch (IOException | JSONException e) {
                 e.printStackTrace();
             }
             return null;
@@ -300,87 +436,74 @@ public class FragmentPridaniSlovicek extends Fragment {
         @Override
         protected void onPostExecute(Void unused) {
             super.onPostExecute(unused);
-            ArrayAdapter<String> adapter = new ArrayAdapter<>(getContext(), R.layout.spinner_item, stovky);
+            ArrayAdapter<String> adapter = new ArrayAdapter<>(getContext(), R.layout.spinner_item, hundreds);
             adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-            stovka.setAdapter(adapter);
-            pb.setVisibility(View.INVISIBLE);
+            hundredPicker.setAdapter(adapter);
+            changeVisibility(true);
         }
     }
 
-    private class pridatSlovicko extends AsyncTask<Void, Void, Void> {
-
-        int idSlovicka;
-        boolean proslo = false;
-
-        public pridatSlovicko(int idSlovicka) {
-            this.idSlovicka = idSlovicka + 1;
-        }
+    private class addWord extends AsyncTask<Void, Void, Void> {
 
         @Override
         protected void onPreExecute() {
             super.onPreExecute();
+            changeVisibility(false);
         }
 
+        @RequiresApi(api = Build.VERSION_CODES.O)
         @Override
         protected Void doInBackground(Void... voids) {
-
             try {
-                Connection con = DriverManager.getConnection("jdbc:mysql://localhost/dk-313_uceniSlovicek?serverTimezone=Europe/Prague", "dk-313", "GyArab14");
-                PreparedStatement st = con.prepareStatement("insert into slovicka (idSlovicka, jazyk, batch, stovka, ciziSlovicko, ceskeSlovicko, skupina) values (?, ?, ?, ?, ?, ?, ?)");
-                st.setInt(1, idSlovicka);
-                st.setString(2, (String) jazyk.getSelectedItem());
-                st.setString(3, (String) batch.getSelectedItem());
-                String s = (String) stovka.getSelectedItem();
-                st.setInt(4, Character.getNumericValue(s.charAt(0)));
-                st.setString(5, slovickoCizi.getText().toString());
-                st.setString(6, slovickoCesky.getText().toString());
-                st.setString(7, "A2");
-                st.executeUpdate();
-                proslo = true;
-            } catch (SQLException e) {
-                e.printStackTrace();
-            }
-            return null;
-        }
-
-        @Override
-        protected void onPostExecute(Void unused) {
-            super.onPostExecute(unused);
-            slovickoCizi.setText("");
-            slovickoCesky.setText("");
-            if (proslo) {
-                Toast.makeText(getContext(), "Slovíčko bylo úspěšně přidáno", Toast.LENGTH_SHORT).show();
-            }
-        }
-    }
-
-    private class getIdSlovicka extends AsyncTask<Void, Void, Void> {
-
-        int idSlovicka;
-
-        @Override
-        protected Void doInBackground(Void... voids) {
-
-            try {
-                Connection con = DriverManager.getConnection("jdbc:mysql://localhost/dk-313_uceniSlovicek?serverTimezone=Europe/Prague", "dk-313", "GyArab14");
-                PreparedStatement st = con.prepareStatement("select max(idSlovicka) from slovicka where jazyk=?");
-                st.setString(1, (String) jazyk.getSelectedItem());
-                ResultSet rs = st.executeQuery();
-                if (rs.next()) {
-                    idSlovicka = rs.getInt(1);
+                URL url = new URL("https://langmaster.wp4u.cz/api/api.php");
+                HttpURLConnection con = (HttpURLConnection) url.openConnection();
+                con.setRequestMethod("POST");
+                con.setRequestProperty("Authorization", "Basic " + new String(Base64.getEncoder().encode((SharedPrefs.DB_USERNAME + ":" + SharedPrefs.DB_PASSWORD).getBytes(StandardCharsets.UTF_8))));
+                con.setRequestProperty("Content-Type", "application/json");
+                con.setDoOutput(true);
+                String group;
+                if (languagePicker.getSelectedItem().equals("AJ")) {
+                    group = SharedPrefs.getString(getContext(), SharedPrefs.SKUPINA_AJ);
+                } else {
+                    group = SharedPrefs.getString(getContext(), SharedPrefs.SKUPINA_NJ);
                 }
-            } catch (SQLException e) {
+                JSONObject obj = new JSONObject();
+                obj.put("jazyk", languagePicker.getSelectedItem());
+                obj.put("skupina", group);
+                obj.put("batch", batchPicker.getSelectedItem());
+                obj.put("stovka", hundredPicker.getSelectedItem());
+                obj.put("ciziSlovicko", vocabForeign.getText().toString());
+                obj.put("ceskeSlovicko", vocabCzech.getText().toString());
+                try (OutputStream os = con.getOutputStream()) {
+                    byte[] input = obj.toString().getBytes(StandardCharsets.UTF_8);
+                    os.write(input, 0, input.length);
+                }
+
+                if (con.getResponseCode() != 200) {
+                    BufferedReader in = new BufferedReader(new InputStreamReader(con.getErrorStream()));
+                    String inputLine;
+                    StringBuilder content = new StringBuilder();
+                    while ((inputLine = in.readLine()) != null) {
+                        content.append(inputLine);
+                    }
+                    in.close();
+                    throw new IllegalStateException((String) new JSONObject(content.toString()).get("error_description"));
+                }
+            } catch (IOException | JSONException e) {
                 e.printStackTrace();
             }
+
+
             return null;
         }
 
         @Override
         protected void onPostExecute(Void unused) {
             super.onPostExecute(unused);
-            new pridatSlovicko(idSlovicka).execute();
+            vocabForeign.setText("");
+            vocabCzech.setText("");
+            changeVisibility(true);
+            Toast.makeText(getContext(), "Slovíčko bylo úspěšně přidáno", Toast.LENGTH_LONG).show();
         }
     }
-
-
 }

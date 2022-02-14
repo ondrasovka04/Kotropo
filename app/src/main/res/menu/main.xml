@@ -3,7 +3,12 @@
     xmlns:app="http://schemas.android.com/apk/res-auto">
     <item
         android:id="@+id/action_settings"
-        android:orderInCategory="100"
-        android:title="Settings"
+        android:orderInCategory="1"
+        android:title="Nastavení"
         app:showAsAction="never" />
+    <item
+        android:id="@+id/action_logout"
+        android:orderInCategory="2"
+        android:title="Odhlásit se"
+        app:showAsAction="never"/>
 </menu>

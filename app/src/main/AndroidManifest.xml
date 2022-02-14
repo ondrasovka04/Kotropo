@@ -14,7 +14,7 @@
         android:theme="@style/Theme.UceniSlovicek"
         tools:replace="android:label">
         <activity
-            android:name=".login.activity_listSkol"
+            android:name=".login.ListSkol"
             android:exported="false" />
         <activity
             android:name=".drawer_items.prehled.Prehled"
@@ -26,8 +26,9 @@
             android:name=".MainActivity"
             android:theme="@style/Theme.UceniSlovicek.NoActionBar" />
         <activity
-            android:name=".login.LoginForm"
-            android:label="Login">
+            android:name=".login.Login"
+            android:label="Přihlášení"
+            android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 

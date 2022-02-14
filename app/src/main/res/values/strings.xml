@@ -5,6 +5,7 @@
     <string name="second_fragment_label">Second Fragment</string>
     <string name="next">Next</string>
     <string name="previous">Previous</string>
+    <string name="translate"><u><b>Přelož:</b></u></string>
 
     <string name="PREFS_SWITCH_TO_NEXT_WEEK">příští týden</string>
 

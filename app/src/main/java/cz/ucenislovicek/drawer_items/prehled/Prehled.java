@@ -5,6 +5,7 @@ import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.os.AsyncTask;
+import android.os.Build;
 import android.os.Bundle;
 import android.view.ContextMenu;
 import android.view.Gravity;
@@ -17,21 +18,30 @@ import android.widget.TableRow;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 import java.util.List;
 
 import cz.ucenislovicek.R;
+import cz.ucenislovicek.SharedPrefs;
 
 public class Prehled extends AppCompatActivity {
 
 
     TableLayout tl;
-    TableRow radkaProSmazani;
+    TableRow lineForDelete;
+    String group;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -40,36 +50,39 @@ public class Prehled extends AppCompatActivity {
         tl = new TableLayout(this);
         tl.setLayoutParams(new TableLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
         Intent intent = getIntent();
-        List<String> cesky = intent.getStringArrayListExtra("cesky");
-        List<String> cizi = intent.getStringArrayListExtra("cizi");
+        List<String> czech = intent.getStringArrayListExtra("czech");
+        List<String> foreign = intent.getStringArrayListExtra("foreign");
         List<String> batch = intent.getStringArrayListExtra("batch");
+        group = intent.getStringExtra("group");
 
         String aktualBatch = "";
 
-        for (int i = 0; i < cesky.size(); i++) {
+        for (int i = 0; i < czech.size(); i++) {
             if (aktualBatch.equals(batch.get(i))) {
                 TableRow tableRow = new TableRow(this);
 
                 TableRow.LayoutParams param = new TableRow.LayoutParams(TableRow.LayoutParams.WRAP_CONTENT, TableRow.LayoutParams.WRAP_CONTENT, 1f);
 
-                TextView tv_cizi = new TextView(this);
-                tv_cizi.setPadding(10, 10, 10, 10);
-                tv_cizi.setGravity(Gravity.CENTER_VERTICAL);
-                tv_cizi.setTextSize(20);
-                tv_cizi.setText(cizi.get(i));
-                tv_cizi.setLayoutParams(param);
-                tv_cizi.setTag(aktualBatch);
+                TextView tv_foreign = new TextView(this);
+                tv_foreign.setPadding(10, 10, 10, 10);
+                tv_foreign.setGravity(Gravity.CENTER_VERTICAL);
+                tv_foreign.setTextSize(20);
+                tv_foreign.setText(foreign.get(i));
+                tv_foreign.setTextColor(getResources().getColor(R.color.textColor));
+                tv_foreign.setLayoutParams(param);
+                tv_foreign.setTag(aktualBatch);
 
-                TextView tv_cesky = new TextView(this);
-                tv_cesky.setPadding(10, 10, 10, 10);
-                tv_cesky.setGravity(Gravity.CENTER_VERTICAL);
-                tv_cesky.setTextSize(20);
-                tv_cesky.setText(cesky.get(i));
-                tv_cesky.setLayoutParams(param);
-                tv_cesky.setTag(aktualBatch);
+                TextView tv_czech = new TextView(this);
+                tv_czech.setPadding(10, 10, 10, 10);
+                tv_czech.setGravity(Gravity.CENTER_VERTICAL);
+                tv_czech.setTextSize(20);
+                tv_czech.setTextColor(getResources().getColor(R.color.textColor));
+                tv_czech.setText(czech.get(i));
+                tv_czech.setLayoutParams(param);
+                tv_czech.setTag(aktualBatch);
 
-                tableRow.addView(tv_cizi);
-                tableRow.addView(tv_cesky);
+                tableRow.addView(tv_foreign);
+                tableRow.addView(tv_czech);
 
                 registerForContextMenu(tableRow);
 
@@ -88,6 +101,7 @@ public class Prehled extends AppCompatActivity {
                 tv.setGravity(Gravity.START);
                 tv.setTypeface(Typeface.DEFAULT_BOLD);
                 tv.setTextSize(22);
+                tv.setTextColor(getResources().getColor(R.color.textColor));
                 tv.setText(aktualBatch);
                 tr.addView(tv);
                 tl.addView(tr);
@@ -107,43 +121,56 @@ public class Prehled extends AppCompatActivity {
     public void onCreateContextMenu(ContextMenu menu, View v, ContextMenu.ContextMenuInfo menuInfo) {
         super.onCreateContextMenu(menu, v, menuInfo);
         getMenuInflater().inflate(R.menu.delete_menu, menu);
-        radkaProSmazani = (TableRow) v;
+        lineForDelete = (TableRow) v;
     }
 
     @SuppressLint("NonConstantResourceId")
     @Override
     public boolean onContextItemSelected(@NonNull MenuItem item) {
         if (item.getItemId() == R.id.delete) {
-            TextView cizi = (TextView) radkaProSmazani.getChildAt(0);
-            TextView cesky = (TextView) radkaProSmazani.getChildAt(1);
-            new smazat_slovicko(cesky.getText().toString(), cizi.getText().toString(), cizi.getTag().toString()).execute();
-            tl.removeView(radkaProSmazani);
+            TextView foreign = (TextView) lineForDelete.getChildAt(0);
+            TextView czech = (TextView) lineForDelete.getChildAt(1);
+            new deleteVocab(czech.getText().toString(), foreign.getText().toString(), foreign.getTag().toString()).execute();
+            tl.removeView(lineForDelete);
             return true;
         }
         return super.onContextItemSelected(item);
     }
 
-    private class smazat_slovicko extends AsyncTask<Void, Void, Void> {
+    private class deleteVocab extends AsyncTask<Void, Void, Void> {
 
-        String cesky, cizi, batch;
+        String czech, foreign, batch;
 
-        public smazat_slovicko(String cesky, String cizi, String batch) {
-            this.cesky = cesky;
-            this.cizi = cizi;
+        public deleteVocab(String czech, String foreign, String batch) {
+            this.czech = czech;
+            this.foreign = foreign;
             this.batch = batch;
         }
 
+        @RequiresApi(api = Build.VERSION_CODES.O)
         @Override
         protected Void doInBackground(Void... voids) {
             try {
-                Connection con = DriverManager.getConnection("jdbc:mysql://localhost/dk-313_uceniSlovicek?serverTimezone=Europe/Prague", "dk-313", "GyArab14");
-                PreparedStatement st = con.prepareStatement("delete from slovicka where ciziSlovicko=? and ceskeSlovicko=? and batch=?");
-                st.setString(1, cizi);
-                st.setString(2, cesky);
-                st.setString(3, batch);
-                st.executeUpdate();
-                con.close();
-            } catch (SQLException e) {
+                if(group.equals("AJ")){
+                    group = SharedPrefs.getString(getApplicationContext(), SharedPrefs.SKUPINA_AJ);
+                } else {
+                    group = SharedPrefs.getString(getApplicationContext(), SharedPrefs.SKUPINA_NJ);
+                }
+                HttpURLConnection con = (HttpURLConnection) new URL("https://langmaster.wp4u.cz/api/api.php?batch=" + batch + "&ciziSlovicko=" + foreign + "&ceskeSlovicko=" + czech + "&skupina=" + group).openConnection();
+                con.setRequestProperty("Authorization", "Basic " + new String(Base64.getEncoder().encode((SharedPrefs.DB_USERNAME + ":" + SharedPrefs.DB_PASSWORD).getBytes(StandardCharsets.UTF_8))));
+                con.setRequestMethod("DELETE");
+
+                if (con.getResponseCode() != 200) {
+                    BufferedReader in = new BufferedReader(new InputStreamReader(con.getErrorStream()));
+                    String inputLine;
+                    StringBuilder content = new StringBuilder();
+                    while ((inputLine = in.readLine()) != null) {
+                        content.append(inputLine);
+                    }
+                    in.close();
+                    throw new IllegalStateException((String) new JSONObject(content.toString()).get("error_description"));
+                }
+            } catch (IOException | JSONException e) {
                 e.printStackTrace();
             }
             return null;

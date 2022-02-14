@@ -3,6 +3,7 @@ package cz.ucenislovicek.login;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Color;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -14,11 +15,12 @@ import android.view.ViewGroup;
 import android.view.inputmethod.EditorInfo;
 import android.widget.Filter;
 import android.widget.Filterable;
-import android.widget.SearchView;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.SearchView;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -37,25 +39,29 @@ import java.util.List;
 import cz.ucenislovicek.R;
 import cz.ucenislovicek.SharedPrefs;
 
-public class activity_listSkol extends AppCompatActivity {
-    private final List<ExampleItem> mesta = new ArrayList<>(), skoly = new ArrayList<>();
+public class ListSkol extends AppCompatActivity {
+    private final List<myItem> cities = new ArrayList<>(), schools = new ArrayList<>();
     private final Context activityContext = this;
-    boolean zobrazenySkoly = false;
-    private ExampleAdapter adapter;
+    boolean schoolsDisplayed = false;
+    private MyAdapter adapter;
     private SearchView searchView;
+    private ProgressBar progressBar;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_list_skol);
-        new getMesta(this).execute();
+        setContentView(R.layout.activity_list_schools);
+        progressBar = findViewById(R.id.loading);
+        new getCities(this).execute();
     }
 
-    private void setUpRecyclerView(List<ExampleItem> list) {
+
+    private void setUpRecyclerView(List<myItem> list) {
         RecyclerView recyclerView = findViewById(R.id.recycler_view);
+        recyclerView.setBackgroundColor(Color.parseColor("#FFAAAAAA"));
         recyclerView.setHasFixedSize(true);
         RecyclerView.LayoutManager layoutManager = new LinearLayoutManager(this);
-        adapter = new ExampleAdapter(list);
+        adapter = new MyAdapter(list);
 
         recyclerView.setLayoutManager(layoutManager);
         recyclerView.setAdapter(adapter);
@@ -63,8 +69,11 @@ public class activity_listSkol extends AppCompatActivity {
 
     @Override
     public void onBackPressed() {
-        if (zobrazenySkoly) {
-            setUpRecyclerView(mesta);
+        if (schoolsDisplayed) {
+            setUpRecyclerView(cities);
+            schoolsDisplayed = false;
+        } else {
+            finish();
         }
     }
 
@@ -77,6 +86,7 @@ public class activity_listSkol extends AppCompatActivity {
         searchView = (SearchView) searchItem.getActionView();
 
         searchView.setImeOptions(EditorInfo.IME_ACTION_DONE);
+        searchView.setClickable(false);
 
         searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
             @Override
@@ -93,41 +103,42 @@ public class activity_listSkol extends AppCompatActivity {
         return true;
     }
 
-    static class ExampleItem {
-        private final String text1;
-        private final String text2;
 
-        public ExampleItem(String text1, String text2) {
-            this.text1 = text1;
-            this.text2 = text2;
+    static class myItem {
+        private final String name;
+        private final String url;
+
+        public myItem(String name, String url) {
+            this.name = name;
+            this.url = url;
         }
 
-        public String getText1() {
-            return text1;
+        public String getName() {
+            return name;
         }
 
-        public String getText2() {
-            return text2;
+        public String getUrl() {
+            return url;
         }
     }
 
-    class ExampleAdapter extends RecyclerView.Adapter<ExampleAdapter.ExampleViewHolder> implements Filterable {
-        private final List<ExampleItem> exampleList;
-        private final List<ExampleItem> exampleListFull;
-        private final Filter exampleFilter = new Filter() {
+    class MyAdapter extends RecyclerView.Adapter<MyAdapter.ViewHolder> implements Filterable {
+        private final List<myItem> itemList;
+        private final List<myItem> itemListFull;
+        private final Filter filter = new Filter() {
             @Override
             protected FilterResults performFiltering(CharSequence constraint) {
-                List<ExampleItem> filteredList = new ArrayList<>();
+                List<myItem> filteredList = new ArrayList<>();
 
                 if (constraint == null || constraint.length() == 0) {
-                    filteredList.addAll(exampleListFull);
+                    filteredList.addAll(itemListFull);
                 } else {
                     String filterPattern = constraint.toString().toLowerCase().trim();
 
-                    for (ExampleItem item : exampleListFull) {
-                        String text1 = bezDiakritiky(item.getText1()).toLowerCase();
-                        String text2 = bezDiakritiky(item.getText2()).toLowerCase();
-                        if (text1.contains(filterPattern) || text2.contains(filterPattern)) {
+                    for (myItem item : itemListFull) {
+                        String name = withoutDiacritics(item.getName()).toLowerCase();
+                        String url = withoutDiacritics(item.getUrl()).toLowerCase();
+                        if (name.contains(filterPattern) || url.contains(filterPattern) || name.replace(" ", "").contains(filterPattern) || url.replace(" ", "").contains(filterPattern)) {
                             filteredList.add(item);
                         }
                     }
@@ -142,82 +153,82 @@ public class activity_listSkol extends AppCompatActivity {
             @SuppressLint("NotifyDataSetChanged")
             @Override
             protected void publishResults(CharSequence constraint, FilterResults results) {
-                exampleList.clear();
-                exampleList.addAll((List) results.values);
+                itemList.clear();
+                itemList.addAll((List) results.values);
                 notifyDataSetChanged();
             }
         };
 
-        public String bezDiakritiky(String vstup){
-            String abecedasdiakritikou = "áÁčČďĎéÉěĚíÍňŇóÓřŘšŠťŤúÚůŮýÝžŽ";
-            String abecedebezdiakritiky = "aAcCdDeEeEiInNoOrRsStTuUuUyYzZ";
-            char[] pole1 = vstup.toCharArray();
-            char[] pole2 = abecedasdiakritikou.toCharArray();
-            char[] pole3 = abecedebezdiakritiky.toCharArray();
-            for(int a = 0; a < pole1.length; a++){
-                for(int b = 0; b < pole2.length; b++){
-                    if(pole1[a] == pole2[b]){
-                        pole1[a] = pole3[b];
+        MyAdapter(List<myItem> itemList) {
+            this.itemList = itemList;
+            itemListFull = new ArrayList<>(itemList);
+        }
+
+        public String withoutDiacritics(String value) {
+            String abcWithDiacritics = "áÁčČďĎéÉěĚíÍňŇóÓřŘšŠťŤúÚůŮýÝžŽ";
+            String abcWithoutDiacritics = "aAcCdDeEeEiInNoOrRsStTuUuUyYzZ";
+            char[] valueArray = value.toCharArray();
+            char[] diacriticsArray = abcWithDiacritics.toCharArray();
+            char[] noDiacriticsArray = abcWithoutDiacritics.toCharArray();
+            for (int i = 0; i < valueArray.length; i++) {
+                for (int j = 0; j < diacriticsArray.length; j++) {
+                    if (valueArray[i] == diacriticsArray[j]) {
+                        valueArray[i] = noDiacriticsArray[j];
                     }
                 }
             }
-            return String.valueOf(pole1);
-        }
-
-        ExampleAdapter(List<ExampleItem> exampleList) {
-            this.exampleList = exampleList;
-            exampleListFull = new ArrayList<>(exampleList);
+            return String.valueOf(valueArray);
         }
 
         @NonNull
         @Override
-        public ExampleViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-            View v = LayoutInflater.from(parent.getContext()).inflate(R.layout.skola_item, parent, false);
-            return new ExampleViewHolder(v);
+        public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+            View v = LayoutInflater.from(parent.getContext()).inflate(R.layout.school_item, parent, false);
+            return new ViewHolder(v);
         }
 
         @Override
-        public void onBindViewHolder(@NonNull ExampleViewHolder holder, int position) {
-            ExampleItem currentItem = exampleList.get(position);
+        public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
+            myItem currentItem = itemList.get(position);
 
-            holder.textView1.setText(currentItem.getText1());
-            if (currentItem.getText2().equals("")) {
-                holder.textView2.setVisibility(View.GONE);
+            holder.name.setText(currentItem.getName());
+            if (currentItem.getUrl().equals("")) {
+                holder.url.setVisibility(View.GONE);
             }
-            holder.textView2.setText(currentItem.getText2());
+            holder.url.setText(currentItem.getUrl());
         }
 
         @Override
         public int getItemCount() {
-            return exampleList.size();
+            return itemList.size();
         }
 
         @Override
         public Filter getFilter() {
-            return exampleFilter;
+            return filter;
         }
 
-        class ExampleViewHolder extends RecyclerView.ViewHolder {
-            TextView textView1;
-            TextView textView2;
+        class ViewHolder extends RecyclerView.ViewHolder {
+            TextView name;
+            TextView url;
 
-            ExampleViewHolder(View itemView) {
+            ViewHolder(View itemView) {
                 super(itemView);
-                textView1 = itemView.findViewById(R.id.text_view1);
-                textView2 = itemView.findViewById(R.id.text_view2);
+                name = itemView.findViewById(R.id.hundredName);
+                url = itemView.findViewById(R.id.url);
 
-                itemView.setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View v) {
-                        if (zobrazenySkoly) {
-                            SharedPrefs.setString(activityContext, SharedPrefs.URL, textView2.getText().toString());
-                            startActivity(new Intent(activityContext, LoginForm.class));
+                itemView.setOnClickListener(v -> {
+                    if (schoolsDisplayed) {
+                        SharedPrefs.setString(activityContext, SharedPrefs.URL, url.getText().toString());
+                        startActivity(new Intent(activityContext, Login.class));
+                        finish();
+                    } else {
+                        if (schools.isEmpty()) {
+                            progressBar.setVisibility(View.VISIBLE);
+                            searchView.setClickable(false);
+                            new getSchools(itemView.getContext(), name.getText().toString()).execute();
                         } else {
-                            if (skoly.isEmpty()) {
-                                new getSkoly(itemView.getContext(), textView1.getText().toString()).execute();
-                            } else {
-                                setUpRecyclerView(skoly);
-                            }
+                            setUpRecyclerView(schools);
                         }
                     }
                 });
@@ -225,11 +236,11 @@ public class activity_listSkol extends AppCompatActivity {
         }
     }
 
-    public class getMesta extends AsyncTask<Void, Void, Void> {
+    public class getCities extends AsyncTask<Void, Void, Void> {
         @SuppressLint("StaticFieldLeak")
         public Context context;
 
-        public getMesta(Context context) {
+        public getCities(Context context) {
             this.context = context;
         }
 
@@ -250,9 +261,9 @@ public class activity_listSkol extends AppCompatActivity {
                 }
                 in.close();
                 JSONArray myArray = new JSONArray(content.toString());
-                mesta.clear();
+                cities.clear();
                 for (int i = 1; i < myArray.length(); i++) {
-                    mesta.add(new ExampleItem(myArray.getJSONObject(i).getString("name"), ""));
+                    cities.add(new myItem(myArray.getJSONObject(i).getString("name"), ""));
                 }
             } catch (IOException | JSONException e) {
                 e.printStackTrace();
@@ -263,26 +274,28 @@ public class activity_listSkol extends AppCompatActivity {
         @Override
         protected void onPostExecute(Void unused) {
             super.onPostExecute(unused);
-            zobrazenySkoly = false;
-            setUpRecyclerView(mesta);
+            schoolsDisplayed = false;
+            setUpRecyclerView(cities);
+            searchView.setClickable(true);
+            progressBar.setVisibility(View.INVISIBLE);
         }
     }
 
-    public class getSkoly extends AsyncTask<Void, Void, Void> {
+    public class getSchools extends AsyncTask<Void, Void, Void> {
         @SuppressLint("StaticFieldLeak")
         public Context context;
         public String city;
 
-        public getSkoly(Context context, String city) {
+        public getSchools(Context context, String city) {
             this.context = context;
             this.city = city;
         }
 
-        public String URLEncode(String text) {
-            if (text.contains(".")) {
-                text = text.substring(0, text.indexOf("."));
+        public String URLEncode(String value) {
+            if (value.contains(".")) {
+                value = value.substring(0, value.indexOf("."));
             }
-            return text.replace("ě", "%C4%9B").replace("š", "%C5%A1").replace("č", "%C4%8D").replace("ř", "%C5%99").replace("ž", "%C5%BE").replace("ý", "%C3%BD").replace("á", "%C3%A1").replace("í", "%C3%AD").replace("é", "%C3%A9").replace("ď", "%C4%8F").replace("ť", "%C5%A5").replace("ň", "%C5%88").replace("ú", "%C3%BA").replace("ů", "%C5%AF").replace("Š", "%C5%A0").replace("Č", "%C4%8C").replace("Ř", "%C5%98").replace("Ž", "%C5%BD").replace("Á", "%C3%81").replace("Ú", "%C3%9A").replace(" ", "%20").replace("ü", "%C3%BC");
+            return value.replace("ě", "%C4%9B").replace("š", "%C5%A1").replace("č", "%C4%8D").replace("ř", "%C5%99").replace("ž", "%C5%BE").replace("ý", "%C3%BD").replace("á", "%C3%A1").replace("í", "%C3%AD").replace("é", "%C3%A9").replace("ď", "%C4%8F").replace("ť", "%C5%A5").replace("ň", "%C5%88").replace("ú", "%C3%BA").replace("ů", "%C5%AF").replace("Š", "%C5%A0").replace("Č", "%C4%8C").replace("Ř", "%C5%98").replace("Ž", "%C5%BD").replace("Á", "%C3%81").replace("Ú", "%C3%9A").replace(" ", "%20").replace("ü", "%C3%BC");
         }
 
         @Override
@@ -303,7 +316,7 @@ public class activity_listSkol extends AppCompatActivity {
                 in.close();
                 JSONArray myArray = new JSONObject(content.toString()).getJSONArray("schools");
                 for (int i = 0; i < myArray.length(); i++) {
-                    skoly.add(new ExampleItem((String) myArray.getJSONObject(i).get("name"), (String) myArray.getJSONObject(i).get("schoolUrl")));
+                    schools.add(new myItem((String) myArray.getJSONObject(i).get("name"), (String) myArray.getJSONObject(i).get("schoolUrl")));
                 }
             } catch (IOException | JSONException e) {
                 e.printStackTrace();
@@ -314,8 +327,10 @@ public class activity_listSkol extends AppCompatActivity {
         @Override
         protected void onPostExecute(Void unused) {
             super.onPostExecute(unused);
-            zobrazenySkoly = true;
-            setUpRecyclerView(skoly);
+            progressBar.setVisibility(View.INVISIBLE);
+            searchView.setClickable(true);
+            schoolsDisplayed = true;
+            setUpRecyclerView(schools);
             searchView.setQuery("", true);
         }
     }
