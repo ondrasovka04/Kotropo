@@ -6,8 +6,8 @@ android {
     compileSdk 31
 
     defaultConfig {
-        applicationId "cz.ucenislovicek"
-        minSdk 21
+        applicationId 'cz.kotropo'
+        minSdk 26
         targetSdk 30
         versionCode 1
         versionName "1.0"

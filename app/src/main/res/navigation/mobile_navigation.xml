@@ -3,29 +3,36 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/mobile_navigation"
-    app:startDestination="@+id/nav_home">
+    app:startDestination="@+id/nav_about">
 
     <fragment
-        android:id="@+id/nav_home"
-        android:name="cz.ucenislovicek.drawer_items.home.HomeFragment"
-        android:label="Home"
-        tools:layout="@layout/fragment_home" />
+        android:id="@+id/nav_about"
+        android:name="cz.kotropo.drawer_items.about.FragmentAbout"
+        android:label="O aplikaci"
+        tools:layout="@layout/fragment_about" />
 
     <fragment
-        android:id="@+id/nav_pridaniSlovicek"
-        android:name="cz.ucenislovicek.drawer_items.pridaniSlovicek.FragmentPridaniSlovicek"
-        android:label="Přidání slovíček"
-        tools:layout="@layout/fragment_pridani_slovicek" />
+        android:id="@+id/nav_add_vocab"
+        android:name="cz.kotropo.drawer_items.addVocab.FragmentAddVocab"
+        android:label="Přidat slovíčko"
+        tools:layout="@layout/fragment_add_vocab" />
 
     <fragment
-        android:id="@+id/nav_prehled"
-        android:name="cz.ucenislovicek.drawer_items.prehled.FragmentPrehled"
+        android:id="@+id/nav_import_vocab"
+        android:name="cz.kotropo.drawer_items.importVocab.FragmentImportVocab"
+        android:label="Nahrát slovíčka"
+        tools:layout="@layout/fragment_import_vocab" />
+
+    <fragment
+        android:id="@+id/nav_vocab_list"
+        android:name="cz.kotropo.drawer_items.vocabList.FragmentVocabList"
         android:label="Přehled slovíček"
-        tools:layout="@layout/fragment_prehled" />
+        tools:layout="@layout/fragment_vocab_list" />
 
     <fragment
-        android:id="@+id/nav_slideshow"
-        android:name="cz.ucenislovicek.drawer_items.test.FragmentTest"
+        android:id="@+id/nav_test"
+        android:name="cz.kotropo.drawer_items.test.FragmentTest"
         android:label="Test"
         tools:layout="@layout/fragment_test" />
+
 </navigation>

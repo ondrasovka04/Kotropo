@@ -5,20 +5,29 @@
 
     <group android:checkableBehavior="single">
         <item
-            android:id="@+id/nav_home"
-            android:icon="@drawable/ic_menu_camera"
-            android:title="Home" />
+            android:id="@+id/nav_about"
+            android:icon="@drawable/ic_about"
+            android:title="O aplikaci"
+            tools:ignore="HardcodedText" />
         <item
-            android:id="@+id/nav_pridaniSlovicek"
-            android:icon="@drawable/ic_pridat_slovicka"
-            android:title="Přidání slovíček" />
+            android:id="@+id/nav_add_vocab"
+            android:icon="@drawable/ic_add_vocab"
+            android:title="Přidat slovíčko"
+            tools:ignore="HardcodedText" />
         <item
-            android:id="@+id/nav_prehled"
-            android:icon="@drawable/ic_prehled_slovicek"
-            android:title="Přehled slovíček" />
+            android:id="@+id/nav_import_vocab"
+            android:icon="@drawable/ic_import_vocab"
+            android:title="Nahrát slovíčka"
+            tools:ignore="HardcodedText" />
         <item
-            android:id="@+id/nav_slideshow"
+            android:id="@+id/nav_vocab_list"
+            android:icon="@drawable/ic_vocab_list"
+            android:title="Přehled slovíček"
+            tools:ignore="HardcodedText" />
+        <item
+            android:id="@+id/nav_test"
             android:icon="@drawable/ic_test"
-            android:title="Test" />
+            android:title="Test"
+            tools:ignore="HardcodedText" />
     </group>
 </menu>
