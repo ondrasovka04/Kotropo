@@ -1,6 +1,8 @@
 package cz.kotropo.drawer_items.importVocab;
 
+import static android.Manifest.permission.WRITE_EXTERNAL_STORAGE;
 import static android.app.Activity.RESULT_OK;
+import static android.os.Build.VERSION.SDK_INT;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
@@ -10,10 +12,13 @@ import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.PorterDuff;
+import android.net.Uri;
 import android.os.AsyncTask;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.provider.MediaStore;
+import android.provider.Settings;
 import android.text.InputType;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -23,7 +28,6 @@ import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
-import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.Spinner;
 import android.widget.TextView;
@@ -38,6 +42,7 @@ import androidx.fragment.app.Fragment;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.opencv.android.OpenCVLoader;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -52,9 +57,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Comparator;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 
 import cz.kotropo.R;
@@ -62,12 +65,14 @@ import cz.kotropo.SharedPrefs;
 import cz.kotropo.databinding.FragmentImportVocabBinding;
 
 public class FragmentImportVocab extends Fragment {
+    private static final String DATA_PATH = Environment.getExternalStorageDirectory().toString() + "/Tess";
+    private static final String TESS_DATA = "/tessdata";
     private Spinner languagePicker, batchPicker, hundredPicker;
     private Button importVocab;
     private ImageButton newBatch, newHundred;
     private TextView bg1, header1, header2, header3;
     private ProgressBar progressBar;
-    private ImageView imageView;
+    private boolean b = false;
 
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         FragmentImportVocabBinding binding = FragmentImportVocabBinding.inflate(inflater, container, false);
@@ -84,10 +89,28 @@ public class FragmentImportVocab extends Fragment {
         header1 = binding.header1;
         header2 = binding.header2;
         header3 = binding.header3;
-        imageView = binding.imageView;
 
         if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.CAMERA) == PackageManager.PERMISSION_DENIED) {
             ActivityCompat.requestPermissions(requireActivity(), new String[]{Manifest.permission.CAMERA}, 100);
+        }
+
+        if (ContextCompat.checkSelfPermission(requireContext(), WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_DENIED) {
+            ActivityCompat.requestPermissions(requireActivity(), new String[]{WRITE_EXTERNAL_STORAGE}, 100);
+        }
+
+        if (SDK_INT >= Build.VERSION_CODES.R) {
+            if (!Environment.isExternalStorageManager()) {
+                try {
+                    Intent intent = new Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION);
+                    intent.addCategory("android.intent.category.DEFAULT");
+                    intent.setData(Uri.parse(String.format("package:%s", requireContext().getPackageName())));
+                    startActivityForResult(intent, 2296);
+                } catch (Exception e) {
+                    Intent intent = new Intent();
+                    intent.setAction(Settings.ACTION_MANAGE_ALL_FILES_ACCESS_PERMISSION);
+                    startActivityForResult(intent, 2296);
+                }
+            }
         }
 
         languagePicker.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
@@ -201,7 +224,7 @@ public class FragmentImportVocab extends Fragment {
                     intent.setType("image/*");
                     intent.setAction(Intent.ACTION_GET_CONTENT);
                     startActivityForResult(Intent.createChooser(intent, "Vybrát obrázek"), 2);
-                    //startActivityForResult(intent, 2);
+
                 } else if (options[item].equals("Zrušit")) {
                     dialog.dismiss();
                 }
@@ -209,35 +232,82 @@ public class FragmentImportVocab extends Fragment {
             builder.show();
         });
 
+        if (!OpenCVLoader.initDebug()) {
+            Toast.makeText(getContext(), "Nepodařilo se načíst OpenCV knihovnu", Toast.LENGTH_SHORT).show();
+        }
+
         new loadLanguages().execute();
 
         return root;
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        if (b) {
+            b = false;
+            changeVisibility(true);
+        }
+    }
+
+    private void prepareTessData() {
+        try {
+            File dir = new File(DATA_PATH + TESS_DATA);
+            if (!dir.exists()) {
+                dir.mkdirs();
+            }
+            String[] fileList = requireContext().getAssets().list("");
+            for (String fileName : fileList) {
+                String pathToDataFile = DATA_PATH + TESS_DATA + "/" + fileName;
+                if (!(new File(pathToDataFile)).exists()) {
+                    InputStream is = requireContext().getAssets().open(fileName);
+                    OutputStream os = new FileOutputStream(pathToDataFile);
+                    byte[] buff = new byte[1024];
+                    int len;
+                    while ((len = is.read(buff)) > 0) {
+                        os.write(buff, 0, len);
+                    }
+                    is.close();
+                    os.close();
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
 
     @Override
     public void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
+
+        String language = languagePicker.getSelectedItem().equals("AJ") ? "eng" : "deu";
+        changeVisibility(false);
+        prepareTessData();
+
         if (requestCode == 1 && resultCode == RESULT_OK) {
-            Bitmap imageBitmap = (Bitmap) Objects.requireNonNull(data).getExtras().get("data");
-            File file = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES), "picture.jpg");
-            try {
-                OutputStream outputStream = new FileOutputStream(file);
-                imageBitmap.compress(Bitmap.CompressFormat.JPEG, 100, outputStream);
-                outputStream.flush();
-                outputStream.close();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            Bitmap bitmap = BitmapFactory.decodeFile(file.getAbsolutePath());
-            imageView.setImageBitmap(bitmap);
-        } else if (requestCode == 2) {
+            Bitmap bitmap = (Bitmap) Objects.requireNonNull(data).getExtras().get("data");
+
+            Thread thread = new Thread(() -> {
+                OCR ocr = new OCR(bitmap, language, DATA_PATH);
+                Intent i = new Intent(getContext(), ImportVocab.class);
+                i.putStringArrayListExtra("czech", ocr.getCzech());
+                i.putStringArrayListExtra("foreign", ocr.getForeign());
+                i.putExtra("language", (String) languagePicker.getSelectedItem());
+                i.putExtra("hundred", Integer.parseInt((String) hundredPicker.getSelectedItem()));
+                i.putExtra("batch", (String) batchPicker.getSelectedItem());
+                startActivity(i);
+                b = true;
+            });
+            thread.start();
+
+        } else if (requestCode == 2 && resultCode == RESULT_OK) {
             File file = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES), "picture.jpg");
             try {
                 InputStream inputStream;
                 try {
-                     inputStream = requireActivity().getContentResolver().openInputStream(data.getData());
-                } catch(NullPointerException e ){
+                    inputStream = requireActivity().getContentResolver().openInputStream(data.getData());
+                } catch (NullPointerException e) {
                     Toast.makeText(getContext(), "Nahrání fotky se nepodařilo", Toast.LENGTH_SHORT).show();
                     return;
                 }
@@ -253,38 +323,26 @@ public class FragmentImportVocab extends Fragment {
                 e.printStackTrace();
             }
             Bitmap bitmap = BitmapFactory.decodeFile(file.getAbsolutePath());
-            //imageView.setImageBitmap(bitmap);
-            LinkedHashMap<String, String> map = new LinkedHashMap<>();
-            map.put("hen-house", "kurník");
-            map.put("lantern", "lucerna, svítilna");
-            map.put("to lurch", "vrávorat, kymácet se");
-            map.put("barrel", "sud");
-            map.put("to flutter", "poletovat (ptáci)");
-            map.put("boar", "kanec");
-            map.put("barn", "stodola");
-            map.put("highly regarded", "velmi považován");
-            map.put("beam", "trám");
-            map.put("stout", "zavalitý, tělnatý");
-            map.put("to pinch", "štípnout, skřípnout");
-            map.put("perch", "bidlo");
-            map.put("sill", "parapet");
-            map.put("hoof", "kopyto");
-            map.put("to conceal = to hide", "schovat se");
-            map.put("mare", "klisna");
-            map.put("foal", "hříbě");
-            map.put("stripe", "pruh");
-            map.put("to strip", "svléci");
-            map.put("appearance", "vzhled");
 
-            Intent i = new Intent(getContext(), ImportVocab.class);
-            ArrayList<String> czech = new ArrayList<>(map.values());
-            ArrayList<String> foreign = new ArrayList<>(map.keySet());
-            i.putStringArrayListExtra("czech", czech);
-            i.putStringArrayListExtra("foreign", foreign);
-            i.putExtra("language", (String) languagePicker.getSelectedItem());
-            i.putExtra("hundred", Integer.parseInt((String) hundredPicker.getSelectedItem()));
-            i.putExtra("batch", (String) batchPicker.getSelectedItem());
-            startActivity(i);
+            Thread thread = new Thread(() -> {
+                OCR ocr = new OCR(bitmap, language, DATA_PATH);
+                Intent i = new Intent(getContext(), ImportVocab.class);
+                i.putStringArrayListExtra("czech", ocr.getCzech());
+                i.putStringArrayListExtra("foreign", ocr.getForeign());
+                i.putExtra("language", (String) languagePicker.getSelectedItem());
+                i.putExtra("hundred", Integer.parseInt((String) hundredPicker.getSelectedItem()));
+                i.putExtra("batch", (String) batchPicker.getSelectedItem());
+                startActivity(i);
+                b = true;
+            });
+            thread.start();
+
+        } else if (requestCode == 2296) {
+            if (SDK_INT >= Build.VERSION_CODES.R) {
+                if (!Environment.isExternalStorageManager()) {
+                    Toast.makeText(getContext(), "Dejte aplikaci povolení", Toast.LENGTH_SHORT).show();
+                }
+            }
         }
     }
 
@@ -300,7 +358,6 @@ public class FragmentImportVocab extends Fragment {
             newBatch.setVisibility(View.VISIBLE);
             importVocab.setVisibility(View.VISIBLE);
             bg1.setVisibility(View.VISIBLE);
-            imageView.setVisibility(View.VISIBLE);
 
             progressBar.setVisibility(View.INVISIBLE);
         } else {
@@ -314,7 +371,6 @@ public class FragmentImportVocab extends Fragment {
             newBatch.setVisibility(View.INVISIBLE);
             importVocab.setVisibility(View.INVISIBLE);
             bg1.setVisibility(View.INVISIBLE);
-            imageView.setVisibility(View.INVISIBLE);
 
             progressBar.setVisibility(View.VISIBLE);
         }

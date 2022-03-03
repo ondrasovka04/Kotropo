@@ -7,17 +7,38 @@
     tools:context=".drawer_items.about.FragmentAbout">
 
     <TextView
-        android:id="@+id/text_home"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="8dp"
-        android:layout_marginTop="8dp"
-        android:layout_marginEnd="8dp"
-        android:textAlignment="center"
-        android:textSize="20sp"
+        android:id="@+id/bg"
+        android:layout_width="380dp"
+        android:layout_height="550dp"
+        android:background="@drawable/background_round"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.492"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
+        android:id="@+id/text_home"
+        android:layout_width="350dp"
+        android:layout_height="wrap_content"
+        android:textAlignment="center"
+        android:textColor="@color/textColor"
+        android:textSize="25sp"
+        app:layout_constraintBottom_toBottomOf="@+id/bg"
+        app:layout_constraintEnd_toEndOf="@+id/bg"
+        app:layout_constraintStart_toStartOf="@+id/bg"
+        app:layout_constraintTop_toBottomOf="@+id/imageView"
+        app:layout_constraintVertical_bias="0.20999998" />
+
+    <ImageView
+        android:id="@+id/imageView"
+        android:layout_width="280dp"
+        android:layout_height="199dp"
+        android:src="@drawable/logo"
+        app:layout_constraintBottom_toBottomOf="@+id/bg"
+        app:layout_constraintEnd_toEndOf="@+id/bg"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="@+id/bg"
+        app:layout_constraintVertical_bias="0.060000002" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -297,8 +297,9 @@ public class FragmentTest extends Fragment {
                     JSONArray myArray = new JSONArray(content.toString());
                     for (int i = 0; i < myArray.length(); i++) {
                         String batch = (String) myArray.getJSONObject(i).get("batch");
-                        if (!batches.contains(batch)) {
-                            hundreds.add((Integer) myArray.getJSONObject(i).get("hundred"));
+                        int hundred = (Integer) myArray.getJSONObject(i).get("hundred");
+                        if (!batches.contains(batch) || (batches.contains(batch) && hundreds.get(batches.indexOf(batch)) != hundred)) {
+                            hundreds.add(hundred);
                             batches.add(batch);
                         }
                     }

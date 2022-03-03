@@ -6,7 +6,6 @@ import android.app.AlertDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
-import android.os.Build;
 import android.os.Bundle;
 import android.text.Html;
 import android.view.Gravity;
@@ -22,7 +21,6 @@ import android.widget.PopupWindow;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.constraintlayout.widget.ConstraintLayout;
 
@@ -188,7 +186,7 @@ public class Test extends AppCompatActivity {
         results.showAtLocation(view, Gravity.CENTER, 0, 0);
         results.setOutsideTouchable(false);
         TextView mark = inflatedLayoutViewResults.findViewById(R.id.mark);
-        ConstraintLayout cl = inflatedLayoutViewResults.findViewById(R.id.pozadi);
+        ConstraintLayout cl = inflatedLayoutViewResults.findViewById(R.id.bg);
         Button but = inflatedLayoutViewResults.findViewById(R.id.close);
         ImageView emoji = inflatedLayoutViewResults.findViewById(R.id.emoji);
         long i = Math.round(correct / vocabularyCount * 100);

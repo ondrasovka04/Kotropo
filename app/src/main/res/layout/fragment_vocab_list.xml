@@ -82,7 +82,7 @@
         android:id="@+id/header1"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Výběr jazyku:"
+        android:text="Výběr jazyka:"
         android:textColor="@color/textColor"
         android:textSize="18sp"
         app:layout_constraintBottom_toBottomOf="@+id/bg2"
@@ -96,7 +96,7 @@
         android:id="@+id/header2"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Výběr stovek / batche:"
+        android:text="Výběr stovek / batchů:"
         android:textColor="@color/textColor"
         android:textSize="18sp"
 

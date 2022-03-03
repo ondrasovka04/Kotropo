@@ -61,7 +61,7 @@ public class VocabList extends AppCompatActivity {
                 TableRow.LayoutParams param = new TableRow.LayoutParams(TableRow.LayoutParams.WRAP_CONTENT, TableRow.LayoutParams.WRAP_CONTENT, 1f);
 
                 TextView tv_foreign = new TextView(this);
-                tv_foreign.setPadding(10, 10, 10, 10);
+                tv_foreign.setPadding(30, 10, 10, 10);
                 tv_foreign.setGravity(Gravity.CENTER_VERTICAL);
                 tv_foreign.setTextSize(20);
                 tv_foreign.setText(foreign.get(i));
@@ -70,7 +70,7 @@ public class VocabList extends AppCompatActivity {
                 tv_foreign.setTag(actualBatch);
 
                 TextView tv_czech = new TextView(this);
-                tv_czech.setPadding(10, 10, 10, 10);
+                tv_czech.setPadding(10, 10, 30, 10);
                 tv_czech.setGravity(Gravity.CENTER_VERTICAL);
                 tv_czech.setTextSize(20);
                 tv_czech.setTextColor(getResources().getColor(R.color.textColor));
@@ -94,7 +94,7 @@ public class VocabList extends AppCompatActivity {
                 i--;
                 TextView tv = new TextView(this);
                 TableRow tr = new TableRow(this);
-                tv.setPadding(10, 10, 10, 10);
+                tv.setPadding(30, 10, 10, 10);
                 tv.setGravity(Gravity.START);
                 tv.setTypeface(Typeface.DEFAULT_BOLD);
                 tv.setTextSize(22);

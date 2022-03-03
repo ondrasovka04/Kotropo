@@ -33,19 +33,6 @@
         app:layout_constraintVertical_bias="0.18"
         tools:ignore="SpeakableTextPresentCheck" />
 
-    <Button
-        android:id="@+id/addWord"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:background="@drawable/button_shape"
-        android:text="Nahrát slovíčka"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.514"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.856" />
-
     <Spinner
         android:id="@+id/batchPicker"
         style="@style/Base.Widget.AppCompat.Spinner.Underlined"
@@ -79,7 +66,7 @@
         android:id="@+id/header1"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Výběr jazyku:"
+        android:text="Výběr jazyka:"
         android:textColor="@color/textColor"
         app:layout_constraintBottom_toBottomOf="@+id/bg1"
         app:layout_constraintEnd_toEndOf="@+id/bg1"
@@ -152,12 +139,17 @@
         app:layout_constraintStart_toEndOf="@+id/hundredPicker"
         app:layout_constraintTop_toTopOf="@+id/hundredPicker" />
 
-    <ImageView
-        android:id="@+id/imageView"
+    <Button
+        android:id="@+id/addWord"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        app:layout_constraintBottom_toTopOf="@+id/addWord"
+        android:background="@drawable/button_shape"
+        android:text="Nahrát slovíčka"
+        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.514"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/bg1" />
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.856" />
+
 </androidx.constraintlayout.widget.ConstraintLayout>
