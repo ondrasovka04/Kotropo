@@ -26,7 +26,7 @@ import androidx.constraintlayout.widget.ConstraintLayout;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -59,8 +59,8 @@ public class Test extends AppCompatActivity {
         });
 
         Intent i = getIntent();
-        HashMap<String, String> vocabulary = (HashMap<String, String>) i.getSerializableExtra("map");
-        test(vocabulary);
+        List<String> foreign = i.getStringArrayListExtra("foreign"), czech = i.getStringArrayListExtra("czech"), synonyms = i.getStringArrayListExtra("synonyms");
+        test(foreign, czech, synonyms);
     }
 
     @Override
@@ -69,21 +69,23 @@ public class Test extends AppCompatActivity {
     }
 
     @SuppressLint("SetTextI18n")
-    private void test(HashMap<String, String> vocabulary) {
-        ArrayList<String> vocabularyForeign = new ArrayList<>(vocabulary.keySet());
-        ArrayList<String> vocabularyCzech = new ArrayList<>(vocabulary.values());
+    private void test(List<String> vocabularyForeign, List<String> vocabularyCzech, List<String> synonyms) {
         ArrayList<String> answers = new ArrayList<>();
         AtomicReference<Double> correct = new AtomicReference<>(0.0);
         AtomicBoolean secondChance = new AtomicBoolean(true);
         final int vocabularyCount = vocabularyCzech.size();
+        List<String> syn = new ArrayList<>(Arrays.asList(synonyms.get(0).split("=")));
+        syn.add(vocabularyForeign.get(0));
 
         czech.setText(vocabularyCzech.get(0));
 
         check.setOnClickListener(view -> {
-            if ((double) levenshtein(foreign.getText().toString(), vocabularyForeign.get(0)) / vocabularyForeign.get(0).length() < 0.34 && secondChance.get() && !foreign.getText().toString().equals(vocabularyForeign.get(0))) {
-                Toast.makeText(this, "Jste blízko!", Toast.LENGTH_SHORT).show();
-                secondChance.set(false);
-                return;
+            for(String s : syn){
+                if ((double) levenshtein(foreign.getText().toString(), s) / s.length() < 0.34 && secondChance.get() && !foreign.getText().toString().equals(s)) {
+                    Toast.makeText(this, "Jste blízko!", Toast.LENGTH_SHORT).show();
+                    secondChance.set(false);
+                    return;
+                }
             }
 
             secondChance.set(true);
@@ -101,7 +103,10 @@ public class Test extends AppCompatActivity {
             popup.showAtLocation(view, Gravity.CENTER, 0, 0);
             popup.setOutsideTouchable(false);
 
-            if (foreign.getText().toString().equals(vocabularyForeign.get(0))) {
+
+            boolean isSynonym = !synonyms.get(0).equals("");
+
+            if (foreign.getText().toString().equals(vocabularyForeign.get(0)) && !isSynonym) {
                 int i = 0;
                 for (String s : answers) {
                     if (s.equals(vocabularyForeign.get(0))) {
@@ -119,15 +124,110 @@ public class Test extends AppCompatActivity {
                 next.setOnClickListener(view12 -> {
                     vocabularyForeign.remove(0);
                     vocabularyCzech.remove(0);
+                    synonyms.remove(0);
+                    syn.clear();
+                    foreign.setText("");
                     if (!vocabularyCzech.isEmpty()) {
                         czech.setText(vocabularyCzech.get(0));
-                        foreign.setText("");
+                        syn.addAll(Arrays.asList(synonyms.get(0).split("=")));
+                        syn.add(vocabularyForeign.get(0));
                     } else {
                         popup.dismiss();
                         showResults(view, vocabularyCount, correct.get());
                     }
                     popup.dismiss();
                 });
+            } else if (isSynonym) {
+                if(syn.contains(foreign.getText().toString())){
+                    syn.remove(foreign.getText().toString());
+                    if(syn.size() == 0){    
+                        int i = 0;
+                        for (String s : answers) {
+                            if (s.equals(vocabularyForeign.get(0))) {
+                                i++;
+                            }
+                        }
+                        if (i == 0) {
+                            correct.getAndSet(correct.get() + 1.0);
+                        } else if (i == 1) {
+                            correct.getAndSet(correct.get() + 0.5);
+                        }
+                        Button next = inflatedLayoutView.findViewById(R.id.next);
+                        ImageView icon = inflatedLayoutView.findViewById(R.id.icon);
+                        icon.setImageResource(R.drawable.tick);
+                        next.setOnClickListener(view12 -> {
+                            vocabularyForeign.remove(0);
+                            vocabularyCzech.remove(0);
+                            synonyms.remove(0);
+                            syn.clear();
+                            foreign.setText("");
+                            if (!vocabularyCzech.isEmpty()) {
+                                czech.setText(vocabularyCzech.get(0));
+                                syn.addAll(Arrays.asList(synonyms.get(0).split("=")));
+                                syn.add(vocabularyForeign.get(0));
+                            } else {
+                                popup.dismiss();
+                                showResults(view, vocabularyCount, correct.get());
+                            }
+                            popup.dismiss();
+                        });
+                    } else if(syn.size() == 1){
+                        popup.dismiss();
+                        Toast.makeText(this, "Správně, ještě 1 synonymum", Toast.LENGTH_LONG).show();
+                        foreign.setText("");
+                    } else if(syn.size() < 5) {
+                        popup.dismiss();
+                        Toast.makeText(this, "Správně, ještě " + syn.size() + " synonyma", Toast.LENGTH_LONG).show();
+                        foreign.setText("");
+                    } else {
+                        popup.dismiss();
+                        Toast.makeText(this, "Správně, ještě " + syn.size() + " synonym", Toast.LENGTH_LONG).show();
+                        foreign.setText("");
+                    }
+                } else {
+                    ConstraintLayout layout = inflatedLayoutView.findViewById(R.id.pokus);
+                    layout.setBackgroundColor(Color.rgb(255, 51, 86));
+
+                    TextView header = inflatedLayoutView.findViewById(R.id.header1);
+                    header.setText("ŠPATNĚ!");
+
+                    ImageView icon = inflatedLayoutView.findViewById(R.id.icon);
+                    icon.setImageResource(R.drawable.cross);
+
+                    TextView correctAnswer = inflatedLayoutView.findViewById(R.id.wrongAnswer);
+                    StringBuilder s = new StringBuilder("Správná odpověď byla:<br><br> <b>" + vocabularyForeign.get(0) + "</b>");
+                    for(String str : synonyms.get(0).split("=")){
+                        s.append("; <small>").append(str).append("</small>");
+                    }
+                    correctAnswer.setText(Html.fromHtml(s.toString()));
+
+                    Button next = inflatedLayoutView.findViewById(R.id.next);
+                    next.setOnClickListener(view1 -> {
+                        int a = (int) ((Math.random() * 5) + 1);
+                        while (vocabularyCzech.size() < a) {
+                            a--;
+                        }
+                        if (a != 0) {
+                            answers.add(vocabularyForeign.get(0));
+                            vocabularyForeign.add(a, vocabularyForeign.get(0));
+                            vocabularyCzech.add(a, vocabularyCzech.get(0));
+                            synonyms.add(a, synonyms.get(0));
+                            vocabularyForeign.remove(0);
+                            vocabularyCzech.remove(0);
+                            synonyms.remove(0);
+                            czech.setText(vocabularyCzech.get(0));
+                            syn.clear();
+                            syn.addAll(Arrays.asList(synonyms.get(0).split("=")));
+                            syn.add(vocabularyForeign.get(0));
+                            foreign.setText("");
+                        } else {
+                            popup.dismiss();
+                            showResults(view, vocabularyCount, correct.get());
+                        }
+                        popup.dismiss();
+                    });
+                }
+
             } else {
                 ConstraintLayout layout = inflatedLayoutView.findViewById(R.id.pokus);
                 layout.setBackgroundColor(Color.rgb(255, 51, 86));
@@ -152,9 +252,10 @@ public class Test extends AppCompatActivity {
                         answers.add(vocabularyForeign.get(0));
                         vocabularyForeign.add(a, vocabularyForeign.get(0));
                         vocabularyCzech.add(a, vocabularyCzech.get(0));
+                        synonyms.add(a, synonyms.get(0));
                         vocabularyForeign.remove(0);
                         vocabularyCzech.remove(0);
-
+                        synonyms.remove(0);
                         czech.setText(vocabularyCzech.get(0));
                         foreign.setText("");
                     } else {

@@ -175,6 +175,7 @@ public class ImportVocab extends AppCompatActivity {
     public boolean onContextItemSelected(@NonNull MenuItem item) {
         if (item.getItemId() == R.id.delete) {
             tl.removeView(lineForDelete);
+            tableRows.remove(lineForDelete);
             return true;
         }
         return super.onContextItemSelected(item);
@@ -234,13 +235,20 @@ public class ImportVocab extends AppCompatActivity {
                 } else {
                     group = SharedPrefs.getString(getApplicationContext(), SharedPrefs.GROUP_NJ);
                 }
+                String primary = foreign.getText().toString();
+                String synonyms = "";
+                if(primary.contains("=")){
+                    primary = primary.split("=")[0];
+                    synonyms = foreign.getText().toString().substring(primary.length() + 1);
+                }
                 JSONObject obj = new JSONObject();
                 obj.put("language", language);
                 obj.put("langGroup", group);
                 obj.put("batch", batch);
                 obj.put("hundred", hundred);
-                obj.put("foreignVocab", foreign.getText().toString());
+                obj.put("foreignVocab", primary);
                 obj.put("czechVocab", czech.getText().toString());
+                obj.put("synonyms", synonyms);
                 obj.put("school", SharedPrefs.getString(getApplicationContext(), SharedPrefs.SCHOOL));
                 obj.put("class", SharedPrefs.getString(getApplicationContext(), SharedPrefs.CLASS));
                 try (OutputStream os = con.getOutputStream()) {

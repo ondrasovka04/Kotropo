@@ -36,6 +36,7 @@ import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Base64;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
@@ -207,7 +208,13 @@ public class FragmentAddVocab extends Fragment {
             new distinctVocab().execute();
         });
 
-        new loadLanguages().execute();
+        if (SharedPrefs.UKRAINE) {
+            ArrayAdapter<String> adapter = new ArrayAdapter<>(getContext(), R.layout.spinner_item, Collections.singletonList("UA"));
+            adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+            languagePicker.setAdapter(adapter);
+        } else {
+            new loadLanguages().execute();
+        }
 
         return root;
     }
@@ -262,7 +269,7 @@ public class FragmentAddVocab extends Fragment {
         @Override
         protected Void doInBackground(Void... voids) {
             try {
-                HttpURLConnection con = (HttpURLConnection) new URL("https://kotropo.wp4u.cz/api/api.php?school=" + SharedPrefs.getString(getContext(), SharedPrefs.SCHOOL) + "&class=" + SharedPrefs.getString(getContext(), SharedPrefs.CLASS)).openConnection();
+                HttpURLConnection con = (HttpURLConnection) new URL("https://kotropo.wp4u.cz/api/api.php?school=" + SharedPrefs.getString(getContext(), SharedPrefs.SCHOOL) + "&class=" + SharedPrefs.getString(getContext(), SharedPrefs.CLASS) + "&sortBy=language").openConnection();
                 con.setRequestProperty("Authorization", "Basic " + new String(Base64.getEncoder().encode((SharedPrefs.DB_USERNAME + ":" + SharedPrefs.DB_PASSWORD).getBytes(StandardCharsets.UTF_8))));
                 con.setRequestMethod("GET");
 
@@ -324,8 +331,19 @@ public class FragmentAddVocab extends Fragment {
         protected Void doInBackground(Void... voids) {
 
             try {
+                String group;
+                if (languagePicker.getSelectedItem().equals("AJ")) {
+                    group = SharedPrefs.getString(getContext(), SharedPrefs.GROUP_AJ);
+                } else {
+                    group = SharedPrefs.getString(getContext(), SharedPrefs.GROUP_NJ);
+                }
                 String hundred = (String) hundredPicker.getSelectedItem();
-                HttpURLConnection con = (HttpURLConnection) new URL("https://kotropo.wp4u.cz/api/api.php?language=" + languagePicker.getSelectedItem() + "&hundred=" + hundred.charAt(0) + "&school=" + SharedPrefs.getString(getContext(), SharedPrefs.SCHOOL) + "&class=" + SharedPrefs.getString(getContext(), SharedPrefs.CLASS)).openConnection();
+                HttpURLConnection con;
+                if (SharedPrefs.UKRAINE) {
+                    con = (HttpURLConnection) new URL("https://kotropo.wp4u.cz/api/api.php?language=" + languagePicker.getSelectedItem() + "&hundred=" + hundred.charAt(0) + "&school=" + SharedPrefs.getString(getContext(), SharedPrefs.SCHOOL) + "&sortBy=batch").openConnection();
+                } else {
+                    con = (HttpURLConnection) new URL("https://kotropo.wp4u.cz/api/api.php?language=" + languagePicker.getSelectedItem() + "&langGroup=" + group +  "&hundred=" + hundred.charAt(0) + "&school=" + SharedPrefs.getString(getContext(), SharedPrefs.SCHOOL) + "&class=" + SharedPrefs.getString(getContext(), SharedPrefs.CLASS) + "&sortBy=batch").openConnection();
+                }
                 con.setRequestProperty("Authorization", "Basic " + new String(Base64.getEncoder().encode((SharedPrefs.DB_USERNAME + ":" + SharedPrefs.DB_PASSWORD).getBytes(StandardCharsets.UTF_8))));
                 con.setRequestMethod("GET");
 
@@ -387,7 +405,20 @@ public class FragmentAddVocab extends Fragment {
         protected Void doInBackground(Void... voids) {
 
             try {
-                HttpURLConnection con = (HttpURLConnection) new URL("https://kotropo.wp4u.cz/api/api.php?language=" + languagePicker.getSelectedItem() + "&school=" + SharedPrefs.getString(getContext(), SharedPrefs.SCHOOL) + "&class=" + SharedPrefs.getString(getContext(), SharedPrefs.CLASS)).openConnection();
+                String group;
+                if (languagePicker.getSelectedItem().equals("AJ")) {
+                    group = SharedPrefs.getString(getContext(), SharedPrefs.GROUP_AJ);
+                } else {
+                    group = SharedPrefs.getString(getContext(), SharedPrefs.GROUP_NJ);
+                }
+
+                HttpURLConnection con;
+                if (SharedPrefs.UKRAINE) {
+                    con = (HttpURLConnection) new URL("https://kotropo.wp4u.cz/api/api.php?language=" + languagePicker.getSelectedItem() + "&school=" + SharedPrefs.getString(getContext(), SharedPrefs.SCHOOL) + "&sortBy=hundred").openConnection();
+                } else {
+                    con = (HttpURLConnection) new URL("https://kotropo.wp4u.cz/api/api.php?language=" + languagePicker.getSelectedItem() + "&langGroup=" + group + "&school=" + SharedPrefs.getString(getContext(), SharedPrefs.SCHOOL) + "&class=" + SharedPrefs.getString(getContext(), SharedPrefs.CLASS) + "&sortBy=hundred").openConnection();
+                }
+
                 con.setRequestProperty("Authorization", "Basic " + new String(Base64.getEncoder().encode((SharedPrefs.DB_USERNAME + ":" + SharedPrefs.DB_PASSWORD).getBytes(StandardCharsets.UTF_8))));
                 con.setRequestMethod("GET");
 
@@ -454,7 +485,12 @@ public class FragmentAddVocab extends Fragment {
                 } else {
                     group = SharedPrefs.getString(getContext(), SharedPrefs.GROUP_NJ);
                 }
-                HttpURLConnection con = (HttpURLConnection) new URL("https://kotropo.wp4u.cz/api/api.php?language=" + languagePicker.getSelectedItem() + "&langGroup=" + group + "&hundred=" + hundredPicker.getSelectedItem() + "&batch=" + batchPicker.getSelectedItem() + "&school=" + SharedPrefs.getString(getContext(), SharedPrefs.SCHOOL) + "&class=" + SharedPrefs.getString(getContext(), SharedPrefs.CLASS)).openConnection();
+                HttpURLConnection con;
+                if (SharedPrefs.UKRAINE) {
+                    con = (HttpURLConnection) new URL("https://kotropo.wp4u.cz/api/api.php?language=" + languagePicker.getSelectedItem() + "&hundred=" + hundredPicker.getSelectedItem() + "&batch=" + batchPicker.getSelectedItem() + "&school=" + SharedPrefs.getString(getContext(), SharedPrefs.SCHOOL)).openConnection();
+                } else {
+                    con = (HttpURLConnection) new URL("https://kotropo.wp4u.cz/api/api.php?language=" + languagePicker.getSelectedItem() + "&langGroup=" + group + "&hundred=" + hundredPicker.getSelectedItem() + "&batch=" + batchPicker.getSelectedItem() + "&school=" + SharedPrefs.getString(getContext(), SharedPrefs.SCHOOL) + "&class=" + SharedPrefs.getString(getContext(), SharedPrefs.CLASS)).openConnection();
+                }
                 con.setRequestProperty("Authorization", "Basic " + new String(Base64.getEncoder().encode((SharedPrefs.DB_USERNAME + ":" + SharedPrefs.DB_PASSWORD).getBytes(StandardCharsets.UTF_8))));
                 con.setRequestMethod("GET");
 
@@ -492,7 +528,11 @@ public class FragmentAddVocab extends Fragment {
         @Override
         protected void onPostExecute(Void unused) {
             super.onPostExecute(unused);
-            if (czech.contains(vocabCzech.getText().toString()) && foreign.contains(vocabForeign.getText().toString())) {
+            String primary = vocabForeign.getText().toString();
+            if(primary.contains("=")){
+                primary = primary.split("=")[0];
+            }
+            if (czech.contains(vocabCzech.getText().toString()) && foreign.contains(primary)) {
                 vocabCzech.setError("Takové slovíčko se již v databázi nachází.");
                 vocabForeign.setError("Takové slovíčko se již v databázi nachází.");
             } else if (czech.contains(vocabCzech.getText().toString())) {
@@ -530,15 +570,32 @@ public class FragmentAddVocab extends Fragment {
                 } else {
                     group = SharedPrefs.getString(getContext(), SharedPrefs.GROUP_NJ);
                 }
+                String primary = vocabForeign.getText().toString();
+                String synonyms = "";
+                if(primary.contains("=")){
+                    primary = primary.split("=")[0];
+                    synonyms = vocabForeign.getText().toString().substring(primary.length() + 1);
+                }
                 JSONObject obj = new JSONObject();
-                obj.put("language", languagePicker.getSelectedItem());
-                obj.put("langGroup", group);
-                obj.put("batch", batchPicker.getSelectedItem());
-                obj.put("hundred", hundredPicker.getSelectedItem());
-                obj.put("foreignVocab", vocabForeign.getText().toString());
-                obj.put("czechVocab", vocabCzech.getText().toString());
-                obj.put("school", SharedPrefs.getString(getContext(), SharedPrefs.SCHOOL));
-                obj.put("class", SharedPrefs.getString(getContext(), SharedPrefs.CLASS));
+                if (SharedPrefs.UKRAINE) {
+                    obj.put("language", languagePicker.getSelectedItem());
+                    obj.put("batch", batchPicker.getSelectedItem());
+                    obj.put("hundred", hundredPicker.getSelectedItem());
+                    obj.put("foreignVocab", primary);
+                    obj.put("synonyms", synonyms);
+                    obj.put("czechVocab", vocabCzech.getText().toString());
+                    obj.put("school", SharedPrefs.getString(getContext(), SharedPrefs.SCHOOL));
+                } else {
+                    obj.put("language", languagePicker.getSelectedItem());
+                    obj.put("langGroup", group);
+                    obj.put("batch", batchPicker.getSelectedItem());
+                    obj.put("hundred", hundredPicker.getSelectedItem());
+                    obj.put("foreignVocab", primary);
+                    obj.put("czechVocab", vocabCzech.getText().toString());
+                    obj.put("synonyms", synonyms);
+                    obj.put("school", SharedPrefs.getString(getContext(), SharedPrefs.SCHOOL));
+                    obj.put("class", SharedPrefs.getString(getContext(), SharedPrefs.CLASS));
+                }
                 try (OutputStream os = con.getOutputStream()) {
                     byte[] input = obj.toString().getBytes(StandardCharsets.UTF_8);
                     os.write(input, 0, input.length);
@@ -557,8 +614,6 @@ public class FragmentAddVocab extends Fragment {
             } catch (IOException | JSONException e) {
                 e.printStackTrace();
             }
-
-
             return null;
         }
 

@@ -20,6 +20,7 @@ public class SharedPrefs {
     public static final String TOKEN = "token";
     public static final String DB_USERNAME = "KopacTrousilPopelka";
     public static final String DB_PASSWORD = "KoTroPoGyArab2021/2022";
+    public static boolean UKRAINE = false;
 
     public static String getString(Context context, String key) {
         return PreferenceManager.getDefaultSharedPreferences(context).getString(key, "");

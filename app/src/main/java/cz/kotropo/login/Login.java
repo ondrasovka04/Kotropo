@@ -1,10 +1,14 @@
 package cz.kotropo.login;
 
 import android.annotation.SuppressLint;
+import android.app.ActionBar;
+import android.app.AlertDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.inputmethod.EditorInfo;
 import android.widget.Button;
@@ -14,6 +18,7 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
@@ -27,12 +32,14 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.Calendar;
 
 import cz.kotropo.CreateDrawer;
 import cz.kotropo.R;
 import cz.kotropo.SharedPrefs;
 import cz.kotropo.databinding.ActivityLoginBinding;
+import cz.kotropo.drawer_items.importVocab.ImportVocab;
 
 
 public class Login extends AppCompatActivity {
@@ -42,6 +49,7 @@ public class Login extends AppCompatActivity {
     private ProgressBar progressBar;
     private ImageView imageView;
     private TextView bg1, bg2;
+    private boolean logging = false;
 
     @Override
     protected void onResume() {
@@ -51,6 +59,7 @@ public class Login extends AppCompatActivity {
         ((EditText) findViewById(R.id.address)).setText(SharedPrefs.getString(this, SharedPrefs.URL));
     }
 
+    @SuppressLint("SetTextI18n")
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -70,6 +79,8 @@ public class Login extends AppCompatActivity {
         bg1 = binding.bg1;
         bg2 = binding.bg2;
 
+        SharedPrefs.UKRAINE = false;
+
         username.setOnEditorActionListener((v, actionId, event) -> {
             if (actionId == EditorInfo.IME_ACTION_DONE) {
                 password.setFocusable(true);
@@ -87,6 +98,7 @@ public class Login extends AppCompatActivity {
         findSchool.setOnClickListener(v -> startActivity(new Intent(Login.this, SchoolList.class)));
 
         login.setOnClickListener(v -> {
+            logging = true;
             changeVisibility(false);
 
             final String passwordText = password.getText().toString();
@@ -101,6 +113,31 @@ public class Login extends AppCompatActivity {
         });
 
 
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.actionbar_flag, menu);
+        return super.onCreateOptionsMenu(menu);
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(@NonNull MenuItem item) {
+        if (item.getItemId() == R.id.flag) {
+            if(serverAddress.getText().toString().isEmpty()){
+                serverAddress.setError("Adresa nesmí být prázdná");
+            } else {
+                if(!logging) {
+                    SharedPrefs.UKRAINE = true;
+                    SharedPrefs.setString(getApplicationContext(), SharedPrefs.SCHOOL, serverAddress.getText().toString());
+                    Intent i = new Intent(this, CreateDrawer.class);
+                    i.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    startActivity(i);
+                    finish();
+                }
+            }
+        }
+        return super.onOptionsItemSelected(item);
     }
 
     private void changeVisibility(boolean on) {
@@ -232,11 +269,11 @@ public class Login extends AppCompatActivity {
                         String name = myArray.getJSONObject(i).getString("Name");
                         if (name.contains("Anglický jazyk") && groups[0] == null) {
                             String s = myArray.getJSONObject(i).getString("Abbrev");
-                            groups[0] = s.substring(s.length() - 2);
+                            groups[0] = s.substring(4);
                         }
                         if (name.contains("Německý jazyk") && groups[1] == null) {
                             String s = myArray.getJSONObject(i).getString("Abbrev");
-                            groups[1] = s.substring(s.length() - 2);
+                            groups[1] = s.substring(4);
                         }
                         if (groups[0] != null && groups[1] != null) {
                             break;

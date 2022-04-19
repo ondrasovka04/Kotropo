@@ -36,6 +36,7 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 
 import cz.kotropo.R;
 import cz.kotropo.SharedPrefs;
@@ -44,8 +45,6 @@ import cz.kotropo.drawer_items.vocabList.MyExpandableListAdapter;
 
 
 public class FragmentTest extends Fragment {
-
-    private final Map<String, String> vocabulary = new LinkedHashMap<>();
     private TextView header1, header2, bg1, bg2;
     private Spinner languagePicker;
     private Button test;
@@ -54,6 +53,7 @@ public class FragmentTest extends Fragment {
     private ExpandableListView expandableListView;
     private MyExpandableListAdapter expandableListAdapter;
     private ProgressBar loading;
+    private final ArrayList<String> foreign = new ArrayList<>(), czech = new ArrayList<>(), synonyms = new ArrayList<>();
 
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         FragmentTestBinding binding = FragmentTestBinding.inflate(inflater, container, false);
@@ -80,14 +80,22 @@ public class FragmentTest extends Fragment {
             }
         });
 
-        new loadLanguages().execute();
+        if (SharedPrefs.UKRAINE) {
+            ArrayAdapter<String> adapter = new ArrayAdapter<>(getContext(), R.layout.spinner_item, Collections.singletonList("UA"));
+            adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+            languagePicker.setAdapter(adapter);
+        } else {
+            new loadLanguages().execute();
+        }
         return root;
     }
 
     @Override
     public void onResume() {
         super.onResume();
-        vocabulary.clear();
+        czech.clear();
+        foreign.clear();
+        synonyms.clear();
     }
 
     private void changeVisibility(boolean on) {
@@ -150,7 +158,12 @@ public class FragmentTest extends Fragment {
                 } else {
                     group = SharedPrefs.getString(getContext(), SharedPrefs.GROUP_NJ);
                 }
-                HttpURLConnection con = (HttpURLConnection) new URL("https://kotropo.wp4u.cz/api/api.php?language=" + languagePicker.getSelectedItem() + "&" + parameter + "=" + b + "&langGroup=" + group + "&school=" + SharedPrefs.getString(getContext(), SharedPrefs.SCHOOL) + "&class=" + SharedPrefs.getString(getContext(), SharedPrefs.CLASS)).openConnection();
+                HttpURLConnection con;
+                if (SharedPrefs.UKRAINE) {
+                    con = (HttpURLConnection) new URL("https://kotropo.wp4u.cz/api/api.php?language=" + languagePicker.getSelectedItem() + "&" + parameter + "=" + b + "&school=" + SharedPrefs.getString(getContext(), SharedPrefs.SCHOOL)).openConnection();
+                } else {
+                    con = (HttpURLConnection) new URL("https://kotropo.wp4u.cz/api/api.php?language=" + languagePicker.getSelectedItem() + "&" + parameter + "=" + b + "&langGroup=" + group + "&school=" + SharedPrefs.getString(getContext(), SharedPrefs.SCHOOL) + "&class=" + SharedPrefs.getString(getContext(), SharedPrefs.CLASS)).openConnection();
+                }
                 con.setRequestProperty("Authorization", "Basic " + new String(Base64.getEncoder().encode((SharedPrefs.DB_USERNAME + ":" + SharedPrefs.DB_PASSWORD).getBytes(StandardCharsets.UTF_8))));
                 con.setRequestMethod("GET");
 
@@ -165,7 +178,9 @@ public class FragmentTest extends Fragment {
 
                     JSONArray myArray = new JSONArray(content.toString());
                     for (int i = 0; i < myArray.length(); i++) {
-                        vocabulary.put((String) myArray.getJSONObject(i).get("foreignVocab"), (String) myArray.getJSONObject(i).get("czechVocab"));
+                        foreign.add((String) myArray.getJSONObject(i).get("foreignVocab"));
+                        czech.add((String) myArray.getJSONObject(i).get("czechVocab"));
+                        synonyms.add((String) myArray.getJSONObject(i).get("synonym"));
                     }
                 } else {
                     BufferedReader in = new BufferedReader(new InputStreamReader(con.getErrorStream()));
@@ -186,12 +201,14 @@ public class FragmentTest extends Fragment {
         @Override
         protected void onPostExecute(Void unused) {
             super.onPostExecute(unused);
-            List<Map.Entry<String, String>> entries = new ArrayList<>(vocabulary.entrySet());
-            Collections.shuffle(entries);
-            LinkedHashMap<String, String> shuffeledVocab = new LinkedHashMap<>();
-            entries.forEach(entry -> shuffeledVocab.put(entry.getKey(), entry.getValue()));
+            long l = System.nanoTime();
+            Collections.shuffle(foreign, new Random(l));
+            Collections.shuffle(czech, new Random(l));
+            Collections.shuffle(synonyms, new Random(l));
             Intent i = new Intent(getContext(), Test.class);
-            i.putExtra("map", shuffeledVocab);
+            i.putStringArrayListExtra("foreign", foreign);
+            i.putStringArrayListExtra("czech", czech);
+            i.putStringArrayListExtra("synonyms", synonyms);
             startActivity(i);
             changeVisibility(true);
         }
@@ -212,7 +229,7 @@ public class FragmentTest extends Fragment {
         protected Void doInBackground(Void... voids) {
 
             try {
-                HttpURLConnection con = (HttpURLConnection) new URL("https://kotropo.wp4u.cz/api/api.php?school=" + SharedPrefs.getString(getContext(), SharedPrefs.SCHOOL) + "&class=" + SharedPrefs.getString(getContext(), SharedPrefs.CLASS)).openConnection();
+                HttpURLConnection con = (HttpURLConnection) new URL("https://kotropo.wp4u.cz/api/api.php?school=" + SharedPrefs.getString(getContext(), SharedPrefs.SCHOOL) + "&class=" + SharedPrefs.getString(getContext(), SharedPrefs.CLASS) + "&sortBy=language").openConnection();
                 con.setRequestProperty("Authorization", "Basic " + new String(Base64.getEncoder().encode((SharedPrefs.DB_USERNAME + ":" + SharedPrefs.DB_PASSWORD).getBytes(StandardCharsets.UTF_8))));
                 con.setRequestMethod("GET");
 
@@ -276,13 +293,19 @@ public class FragmentTest extends Fragment {
             List<String> batches = new ArrayList<>();
 
             try {
-                String group;
-                if (languagePicker.getSelectedItem().equals("AJ")) {
-                    group = SharedPrefs.getString(getContext(), SharedPrefs.GROUP_AJ);
+                HttpURLConnection con;
+                if (SharedPrefs.UKRAINE) {
+                    con = (HttpURLConnection) new URL("https://kotropo.wp4u.cz/api/api.php?language=" + languagePicker.getSelectedItem() + "&sortBy=hundred,batch&school=" + SharedPrefs.getString(getContext(), SharedPrefs.SCHOOL)).openConnection();
                 } else {
-                    group = SharedPrefs.getString(getContext(), SharedPrefs.GROUP_NJ);
+                    String group;
+                    if (languagePicker.getSelectedItem().equals("AJ")) {
+                        group = SharedPrefs.getString(getContext(), SharedPrefs.GROUP_AJ);
+                    } else {
+                        group = SharedPrefs.getString(getContext(), SharedPrefs.GROUP_NJ);
+                    }
+                    con = (HttpURLConnection) new URL("https://kotropo.wp4u.cz/api/api.php?language=" + languagePicker.getSelectedItem() + "&sortBy=hundred,batch&langGroup=" + group + "&school=" + SharedPrefs.getString(getContext(), SharedPrefs.SCHOOL) + "&class=" + SharedPrefs.getString(getContext(), SharedPrefs.CLASS)).openConnection();
                 }
-                HttpURLConnection con = (HttpURLConnection) new URL("https://kotropo.wp4u.cz/api/api.php?language=" + languagePicker.getSelectedItem() + "&sortBy=hundred,batch&langGroup=" + group + "&school=" + SharedPrefs.getString(getContext(), SharedPrefs.SCHOOL) + "&class=" + SharedPrefs.getString(getContext(), SharedPrefs.CLASS)).openConnection();
+
                 con.setRequestProperty("Authorization", "Basic " + new String(Base64.getEncoder().encode((SharedPrefs.DB_USERNAME + ":" + SharedPrefs.DB_PASSWORD).getBytes(StandardCharsets.UTF_8))));
                 con.setRequestMethod("GET");
 

@@ -6,6 +6,7 @@ import android.graphics.Color;
 import android.graphics.Typeface;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.text.Html;
 import android.view.ContextMenu;
 import android.view.Gravity;
 import android.view.MenuItem;
@@ -40,6 +41,7 @@ public class VocabList extends AppCompatActivity {
     private TableRow lineForDelete;
     private String group;
 
+    @SuppressLint("SetTextI18n")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -50,6 +52,7 @@ public class VocabList extends AppCompatActivity {
         List<String> czech = intent.getStringArrayListExtra("czech");
         List<String> foreign = intent.getStringArrayListExtra("foreign");
         List<String> batch = intent.getStringArrayListExtra("batch");
+        List<String> synonyms = intent.getStringArrayListExtra("synonyms");
         group = intent.getStringExtra("group");
 
         String actualBatch = "";
@@ -64,7 +67,14 @@ public class VocabList extends AppCompatActivity {
                 tv_foreign.setPadding(30, 10, 10, 10);
                 tv_foreign.setGravity(Gravity.CENTER_VERTICAL);
                 tv_foreign.setTextSize(20);
-                tv_foreign.setText(foreign.get(i));
+
+                if(synonyms.get(i).equals("")){
+                    tv_foreign.setText(foreign.get(i));
+                } else {
+
+                    String s = foreign.get(i) + "<br><span style='color:blue;'><i><small>" + synonyms.get(i).replace("=", "<br>") + "</small></i></span>";
+                    tv_foreign.setText(Html.fromHtml(s));
+                }
                 tv_foreign.setTextColor(getResources().getColor(R.color.textColor));
                 tv_foreign.setLayoutParams(param);
                 tv_foreign.setTag(actualBatch);
@@ -152,7 +162,7 @@ public class VocabList extends AppCompatActivity {
                 } else {
                     group = SharedPrefs.getString(getApplicationContext(), SharedPrefs.GROUP_NJ);
                 }
-                HttpURLConnection con = (HttpURLConnection) new URL("https://kotropo.wp4u.cz/api/api.php?batch=" + batch + "&foreignVocab=" + foreign + "&czechVocab=" + czech + "&langGroup=" + group + "&school=" + SharedPrefs.getString(getApplicationContext(), SharedPrefs.SCHOOL) + "&class=" + SharedPrefs.getString(getApplicationContext(), SharedPrefs.CLASS)).openConnection();
+                HttpURLConnection con = (HttpURLConnection) new URL("https://kotropo.wp4u.cz/api/api.php?batch=" + batch + "&foreignVocab=" + foreign.split("\n")[0] + "&czechVocab=" + czech + "&langGroup=" + group + "&school=" + SharedPrefs.getString(getApplicationContext(), SharedPrefs.SCHOOL) + "&class=" + SharedPrefs.getString(getApplicationContext(), SharedPrefs.CLASS)).openConnection();
                 con.setRequestProperty("Authorization", "Basic " + new String(Base64.getEncoder().encode((SharedPrefs.DB_USERNAME + ":" + SharedPrefs.DB_PASSWORD).getBytes(StandardCharsets.UTF_8))));
                 con.setRequestMethod("DELETE");
 

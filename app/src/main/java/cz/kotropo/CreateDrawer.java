@@ -34,6 +34,11 @@ public class CreateDrawer extends AppCompatActivity {
         setSupportActionBar(binding.appBarMain.toolbar);
         DrawerLayout drawer = binding.drawerLayout;
         NavigationView navigationView = binding.navView;
+
+        Menu menuNav = navigationView.getMenu();
+        MenuItem item = menuNav.findItem(R.id.nav_import_vocab);
+        item.setEnabled(!SharedPrefs.UKRAINE);
+
         mAppBarConfiguration = new AppBarConfiguration.Builder(R.id.nav_about, R.id.nav_add_vocab, R.id.nav_vocab_list, R.id.nav_test, R.id.nav_import_vocab).setOpenableLayout(drawer).build();
         NavController navController = Navigation.findNavController(this, R.id.nav_host_fragment_content_main);
         NavigationUI.setupActionBarWithNavController(this, navController, mAppBarConfiguration);
